@@ -7,8 +7,8 @@ using namespace std;
 
 class Device {
 public:
-    int tick_frequency; 
     string name;
+    int tick_frequency; 
 
     virtual void tick() = 0;
     virtual ~Device() = default;
@@ -16,13 +16,13 @@ public:
 
 class Emulator {
     static std::shared_ptr<Emulator> instance;
-    std::unordered_map<int, std::shared_ptr<Device>> devices;
-    int next_device_id;
+    std::unordered_map<uint16_t, std::shared_ptr<Device>> devices;
+    uint16_t next_device_id;
 
     Emulator() : next_device_id(0) {}
 
     int get_next_device_id() {
-        int next_id = next_device_id;
+        uint16_t next_id = next_device_id;
         next_device_id += 1;
         return next_id;
     }
@@ -55,7 +55,7 @@ class Emulator {
         }
     }
 
-    std::optional<std::shared_ptr<Device>> get_device_by_id(int id) {
+    std::optional<std::shared_ptr<Device>> get_device_by_id(uint16_t id) {
         auto maybe_found = devices.find(id);
         if (maybe_found != devices.end()) {
             return maybe_found->second;
@@ -66,27 +66,54 @@ class Emulator {
 };
 
 class Cpu : public Device {
+    uint32_t program_counter;
+    uint32_t instruction_pointer;
+    uint16_t ram_id;
 public:
-    Cpu(const string& name) {
+    Cpu(const string& name, uint16_t ram_id, uint32_t starting_instruction_pointer) {
+        this->program_counter = 0;
+        this->instruction_pointer = starting_instruction_pointer;
         this->name = name;
+        this->ram_id = ram_id;
     }
 
     void tick() override {
-        auto instance = Emulator::get_instance();
-        instance.get()->print_devices();
+        
     }
 };
+
+template <typename T>
 class Ram: public Device {
-    std::unique_ptr<uint8_t[]> memory;
-    size_t word_size_in_bytes;
+    std::unique_ptr<T[]> memory;
     size_t length;
 
     public:
-    Ram(const string& name, int word_size_in_bytes, int length) {
+    Ram(const string& name, int length) {
+        this->emulator_ptr = Emulator::get_instance();
         this->name = name;
         this->length = length;
-        this->word_size_in_bytes = word_size_in_bytes;
+        this->memory = std::make_unique<T[]>(length);
+        
+        for (size_t i=0;i<length;i++) {
+            this->memory[i] = 0;
+        }
     }
+    std::optional<T> read_from_address(size_t address) {
+        if (address < this->length) {
+            return this->memory.get()[address];
+        } else {
+            return std::nullopt;
+        }
+    }
+    bool write_to_address(size_t address, T value) {
+        if (address < this->length) {
+            this->memory.get()[address] = value;
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
 };
 
 std::shared_ptr<Emulator> Emulator::instance = nullptr;
@@ -94,7 +121,7 @@ std::shared_ptr<Emulator> Emulator::instance = nullptr;
 int main() {
     auto instance_1 = Emulator::get_instance();
     auto instance_2 = Emulator::get_instance();
-    auto cpu = std::make_unique<Cpu>("THIS CPU");
+    auto cpu = std::make_unique<Cpu>("THIS CPU", 1, 0);
 
     int cpu_id = instance_1->register_device(std::move(cpu));
     instance_1->print_devices(); 
