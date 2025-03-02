@@ -1,16 +1,22 @@
-#ifndef CPU_H
+#ifndef CPU_H  
 #define CPU_H
 
-#include "Device.h"
-
-class Cpu : public Device {
-    uint32_t program_counter;
-    uint32_t instruction_pointer;
-    uint16_t ram_id;
+class Cpu {
+private:
+    uint16_t reg_ab;
+    uint16_t reg_cd;
+    uint16_t reg_ef;
+    uint16_t reg_hl;
+    uint16_t reg_sp;
+    uint8_t first_byte_offset;
+    uint8_t second_byte_offset;
+    uint8_t* get_register(EightBitRegs reg);
+    uint16_t* get_register(SixteenBitRegs reg);
 
 public:
-    Cpu(const std::string& name, uint16_t ram_id, uint32_t starting_instruction_pointer);
-    void tick() override;
+    Cpu();      
+    ~Cpu();
+    
 };
 
-#endif // CPU_H
+#endif CPU_H
