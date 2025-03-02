@@ -1,5 +1,13 @@
 #ifndef CPU_H  
 #define CPU_H
+#include <iostream>
+
+enum EightBitRegs {
+    A, B, C, D, E, F, H, L,
+};
+enum SixteenBitRegs {
+    AB, CD, EF, HL, SP,
+};
 
 class Cpu {
 private:
@@ -19,4 +27,4 @@ public:
     
 };
 
-#endif CPU_H
+#endif
