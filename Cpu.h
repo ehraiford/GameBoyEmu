@@ -4,7 +4,7 @@
 #include "Ram.h"
 
 enum EightBitRegs {
-    A, B, C, D, E, F, H, L,
+    B, C, D, E, F, H, L, A
 };
 enum SixteenBitRegs {
     BC, DE, HL, SP,
@@ -14,23 +14,28 @@ enum SixteenBitRegs {
 
 class Cpu {
 private:
-    uint8_t reg_a;
-    uint8_t reg_b;
-    uint8_t reg_c;
-    uint8_t reg_d;
-    uint8_t reg_e;
-    uint8_t reg_f;
-    uint8_t reg_h;
-    uint8_t reg_l;
-    uint16_t reg_sp;
+    uint8_t a;
+    uint8_t b;
+    uint8_t c;
+    uint8_t d;
+    uint8_t e;
+    uint8_t f;
+    uint8_t h;
+    uint8_t l;
+    uint16_t sp;
+    uint16_t pc;
     Ram* ram;
 
 
-    uint8_t get_8bit_register(uint8_t register_number);
-    uint16_t get_16bit_register(uint8_t register_number);
-
-    void set_8bit_register(uint8_t register_number, uint8_t value);
-    void set_16bit_register(uint8_t register_number, uint16_t value);
+    uint8_t get_r8(uint8_t register_number);
+    uint16_t get_r16(uint8_t register_number);
+    uint16_t get_r16_stk(uint8_t register_number);
+    uint16_t get_r16_mem(uint8_t register_number);
+    bool get_flag(uint8_t flag_number);
+    
+    void set_r8(uint8_t register_number, uint8_t value);
+    void set_r16(uint8_t register_number, uint16_t value);
+    void set_r16_stk(uint8_t register_number, uint16_t value);
 
 public:
     Cpu();      
