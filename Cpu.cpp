@@ -1,59 +1,93 @@
 #include "Cpu.h"
 #include <iostream>
 
-bool is_little_endian() {
-    uint16_t value = 0x0001;
-    const uint8_t* pointer = reinterpret_cast<uint8_t*>(&value);
-    return pointer[0] == 0x01;
-}
-
-uint8_t* Cpu::get_register(EightBitRegs reg) {
-    switch (reg) {
-        case EightBitRegs::A:
-            return reinterpret_cast<uint8_t*>(&this->reg_ab) + this->first_byte_offset;
-        case EightBitRegs::B:
-            return reinterpret_cast<uint8_t*>(&this->reg_ab) + this->second_byte_offset;
-        case EightBitRegs::C:
-            return reinterpret_cast<uint8_t*>(&this->reg_cd) + this->first_byte_offset;
-        case EightBitRegs::D:
-            return reinterpret_cast<uint8_t*>(&this->reg_cd) + this->second_byte_offset;
-        case EightBitRegs::E:
-            return reinterpret_cast<uint8_t*>(&this->reg_ef) + this->first_byte_offset;
-        case EightBitRegs::F:
-            return reinterpret_cast<uint8_t*>(&this->reg_ef) + this->second_byte_offset;
-        case EightBitRegs::H:
-            return reinterpret_cast<uint8_t*>(&this->reg_hl) + this->first_byte_offset;
-        case EightBitRegs::L:
-            return reinterpret_cast<uint8_t*>(&this->reg_ef) + this->second_byte_offset;
+uint8_t Cpu::get_8bit_register(uint8_t register_number) {
+    switch (register_number) {
+        case 0:
+            return this->reg_b;
+        case 1:
+            return this->reg_c;
+        case 2:
+            return this->reg_d;
+        case 3:
+            return this->reg_e;
+        case 4:
+            return this->reg_f;
+        case 5:
+            return this->reg_h;
+        case 6:
+            return this->ram->get_memory((this->reg_h << 8) | this->reg_l);
+        case 7:
+            return this->reg_a;
     };
 };
-uint16_t* Cpu::get_register(SixteenBitRegs reg) {
-    switch (reg) {
-        case SixteenBitRegs::AB:
-            return &this->reg_ab;
-        case SixteenBitRegs::CD:
-            return &this->reg_cd;
-        case SixteenBitRegs::EF:
-            return &this->reg_ef;
-        case SixteenBitRegs::HL:
-            return &this->reg_hl;
-        case SixteenBitRegs::SP:
-            return &this->reg_sp;
+uint16_t Cpu::get_16bit_register(uint8_t register_number) {
+    switch (register_number) {
+        case 0:
+            return (this->reg_b << 8) | this->reg_c;
+        case 1:
+            return (this->reg_d << 8) | this->reg_e;
+        case 2:
+            return (this->reg_h << 8) | this->reg_l;
+        case 3:
+            return this->reg_sp;
+    };
+};
+
+void Cpu::set_8bit_register(uint8_t register_number, uint8_t value) {
+    switch (register_number) {
+        case 7:
+            this->reg_a = value;
+            break;
+        case 0:
+            this->reg_b = value;
+            break;
+        case 1:
+            this->reg_c = value;
+            break;
+        case 2:
+            this->reg_d = value;
+            break;
+        case 3:
+            this->reg_e = value;
+            break;
+        case 4:
+            this->reg_f = value;
+            break;
+        case 5:
+            this->reg_h = value;
+            break;
+        case 6:
+            this->ram->set_memory((this->reg_h << 8) | this->reg_l, value);
+            break;
+    };
+};
+
+void Cpu::set_16bit_register(uint8_t register_number, uint16_t value) {
+    switch (register_number) {
+        case 0:
+            this->reg_b = (value >> 8);
+            this->reg_c = value & 0x00FF;
+        case 1:
+            this->reg_d = (value >> 8);
+            this->reg_e = value & 0x00FF;
+        case 2:
+            this->reg_h = (value >> 8);
+            this->reg_l = value & 0x00FF;
+        case 3:
+            this->reg_sp = value;
     };
 };
 
 Cpu::Cpu() {
-    if (is_little_endian()) {
-        this->second_byte_offset = 0;
-        this->first_byte_offset = 1;
-    } else {
-        this->second_byte_offset = 1;
-        this->first_byte_offset = 0;
-    }
-    this->reg_ab = 0;
-    this->reg_cd = 0;
-    this->reg_ef = 0;
-    this->reg_hl = 0;
-    this->reg_sp = 0;        
+    this->reg_a = 0;
+    this->reg_c = 0;
+    this->reg_e = 0;
+    this->reg_h = 0;
+    this->reg_sp = 0;    
+    this->reg_b = 0;
+    this->reg_d = 0;
+    this->reg_f = 0;
+    this->reg_l = 0;       
 };
 Cpu::~Cpu() {};

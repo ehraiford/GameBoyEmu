@@ -9,7 +9,7 @@ public:
     Ram();
     ~Ram();
     uint8_t get_memory(uint16_t address);
-    void set_memory(uint16_t address);
+    void set_memory(uint16_t address, uint8_t value);
 };
 
 #endif
