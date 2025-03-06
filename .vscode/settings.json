@@ -54,6 +54,9 @@
     },
     "cSpell.words": [
         "fsanitize",
+        "RETI",
+        "RLCA",
+        "RRCA",
         "Werror",
         "Wextra",
         "Wpedantic"

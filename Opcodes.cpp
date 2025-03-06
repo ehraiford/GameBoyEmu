@@ -11,7 +11,8 @@ using OpcodeHandler = std::function<void(Cpu&)>;
 OpcodeHandler opcode_table[256];
 
 
-void inialize_opcode_map() {
+void initialize_opcode_map() {
     opcode_table[0x00] = &nop;
-    
+    opcode_table[0x01] = [](Cpu& cpu){};
+        
 };
