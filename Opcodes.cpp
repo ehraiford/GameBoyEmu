@@ -1,18 +1,19 @@
 #include <cstdint>
 #include <functional>
+#include <array>
 #include "Cpu.h"
 
-void nop(Cpu& cpu) {};
-void load_16_bit(uint16_t* reg, uint16_t value) {
-    *reg = value;
+typedef void (Cpu::*OpFunc)(void*);
+class OpCode {
+    OpFunc op_func;
+    uint8_t cycles;
+public: 
+    OpCode(OpFunc func, uint8_t cycles) : op_func(func), cycles(cycles) {};
+    
+    void execute(Cpu* cpu, void* args) {
+        (cpu->*op_func)(args);
+    };
 };
 
-using OpcodeHandler = std::function<void(Cpu&)>;
-OpcodeHandler opcode_table[256];
-
-
-void initialize_opcode_map() {
-    opcode_table[0x00] = &nop;
-    opcode_table[0x01] = [](Cpu& cpu){};
-        
-};
+static OpCode nop = OpCode(&Cpu::nop, 1);
+static OpCode copy = OpCode(&Cpu::copy, 1);
