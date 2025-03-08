@@ -7,25 +7,27 @@ typedef void (Cpu::*OpFunc)(void*);
 class OpCode {
     OpFunc op_func;
     uint8_t cycles;
+    uint8_t bytes;
 public: 
     OpCode(OpFunc func, uint8_t cycles) : op_func(func), cycles(cycles) {};
+    OpCode(OpFunc func, uint8_t cycles, uint8_t bytes) : op_func(func), cycles(cycles), bytes(bytes) {};
     
     void execute(Cpu* cpu, void* args) {
         (cpu->*op_func)(args);
     };
 };
 
-static OpCode copy = OpCode(&Cpu::copy, 1);
-static OpCode load_immediate_8bit = OpCode(&Cpu::load_immediate_8bit, 1);
-static OpCode load_immediate_16bit = OpCode(&Cpu::load_immediate_16bit, 1);
-static OpCode store_at_hl_address = OpCode(&Cpu::store_at_hl_address, 1); 
-static OpCode store_immediate_at_hl_address = OpCode(&Cpu::store_immediate_at_hl_address, 1); 
-static OpCode load_from_hl_address = OpCode(&Cpu::load_from_hl_address, 1);
-static OpCode store_a_at_register_address = OpCode(&Cpu::store_a_at_register_address, 1);
-static OpCode store_a_at_immediate_address = OpCode(&Cpu::store_a_at_immediate_address, 1);
-static OpCode store_a_at_immediate_hardware_address = OpCode(&Cpu::store_a_at_immediate_hardware_address, 1);
-static OpCode store_a_at_offset_hardware_address = OpCode(&Cpu::store_a_at_offset_hardware_address, 1); 
-static OpCode load_a_from_register_address = OpCode(&Cpu::load_a_from_register_address, 1); 
+static OpCode copy = OpCode(&Cpu::copy, 1, 1);
+static OpCode load_immediate_8bit = OpCode(&Cpu::load_immediate_8bit, 2, 2);
+static OpCode load_immediate_16bit = OpCode(&Cpu::load_immediate_16bit, 3, 3);
+static OpCode store_at_hl_address = OpCode(&Cpu::store_at_hl_address, 2, 1); 
+static OpCode store_immediate_at_hl_address = OpCode(&Cpu::store_immediate_at_hl_address, 3, 2); 
+static OpCode load_from_hl_address = OpCode(&Cpu::load_from_hl_address, 2, 1);
+static OpCode store_a_at_register_address = OpCode(&Cpu::store_a_at_register_address, 2, 1);
+static OpCode store_a_at_immediate_address = OpCode(&Cpu::store_a_at_immediate_address, 4, 3);
+static OpCode store_a_at_immediate_hardware_address = OpCode(&Cpu::store_a_at_immediate_hardware_address, 3, 2);
+static OpCode store_a_at_hardware_address_offset_by_c = OpCode(&Cpu::store_a_at_hardware_address_offset_by_c, 2, 1); 
+static OpCode load_a_from_register_address = OpCode(&Cpu::load_a_from_register_address, 2, 1); 
 static OpCode load_a_from_immediate_address = OpCode(&Cpu::load_a_from_immediate_address, 1); 
 static OpCode load_a_from_immediate_hardware_address = OpCode(&Cpu::load_a_from_immediate_hardware_address, 1);
 static OpCode load_a_from_offset_hardware_address = OpCode(&Cpu::load_a_from_offset_hardware_address, 1); 

@@ -53,7 +53,7 @@ public:
     void store_a_at_register_address(void* args); // LD [r16],A
     void store_a_at_immediate_address(void* args); // LD [n16],A
     void store_a_at_immediate_hardware_address(void* args); // LDH [n16],A
-    void store_a_at_offset_hardware_address(void* args); // LDH [C],A
+    void store_a_at_hardware_address_offset_by_c(void* args); // LDH [C],A
     void load_a_from_register_address(void* args); // LD A,[r16]
     void load_a_from_immediate_address(void* args); // LD A,[n16]
     void load_a_from_immediate_hardware_address(void* args); // LDH A,[n16]

@@ -187,3 +187,63 @@ Cpu::Cpu() {
     this->pc = 0;    
 };
 Cpu::~Cpu() {};
+
+
+// opcodes
+// LD r8,r8
+void Cpu::copy(void* args) {
+    uint8_t* dest = reinterpret_cast<uint8_t*>(args);
+    uint8_t val = reinterpret_cast<uint8_t>(args + sizeof(uint8_t*));
+    *dest = val;
+};
+// LD r8,n8
+void Cpu::load_immediate_8bit(void* args) {
+    uint8_t* dest = reinterpret_cast<uint8_t*>(args);
+    uint8_t val = reinterpret_cast<uint8_t>(args + sizeof(uint8_t*));
+    *dest = val;
+};
+// LD r16,n16
+void Cpu::load_immediate_16bit(void* args) {
+    uint16_t* dest = reinterpret_cast<uint16_t*>(args);
+    uint16_t val = reinterpret_cast<uint16_t>(args + sizeof(uint16_t*));
+    *dest = val;
+};
+// LD [HL],r8
+void Cpu::store_at_hl_address(void* args) {
+    uint8_t val = reinterpret_cast<uint8_t>(args);
+    this->ram->set_memory((this->h << 8) | this->l, val);
+};
+// LD [HL],n8
+void Cpu::store_immediate_at_hl_address(void* args) {
+    uint8_t val = reinterpret_cast<uint8_t>(args);
+    this->ram->set_memory((this->h << 8) | this->l, val);
+};
+// LD r8,[HL]
+void Cpu::load_from_hl_address(void* args) {
+    uint8_t* dest = reinterpret_cast<uint8_t*>(args);
+    *dest = this->ram->get_memory((this->h << 8) | this->l);
+};
+// LD [r16],A
+void Cpu::store_a_at_register_address(void* args) {
+    uint16_t address = reinterpret_cast<uint16_t>(args);
+    this->ram->set_memory(address, this->a);
+};
+// LD [n16],A
+void Cpu::store_a_at_immediate_address(void* args) {
+    uint16_t address = reinterpret_cast<uint16_t>(args);
+    this->ram->set_memory(address, this->a);
+};
+// LDH [n16],A
+void Cpu::store_a_at_immediate_hardware_address(void* args) {
+    uint8_t addr_low = reinterpret_cast<uint8_t>(args);
+    this->ram->set_memory(0xFF00 | addr_low, this->a);
+};
+// LDH [C],A
+void Cpu::store_a_at_hardware_address_offset_by_c(void* args) {
+    this->ram->set_memory(0xFF00 | this->c, this->a);
+};
+// LD A,[r16]
+void Cpu::load_a_from_register_address(void* args) {
+    uint16_t address = reinterpret_cast<uint16_t>(args);
+    this->a = this->ram->get_memory(address);
+};
