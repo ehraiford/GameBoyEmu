@@ -11,7 +11,7 @@ enum SixteenBitRegs {
 };
 
 
-
+// TODO Check runtime alignment... 
 class Cpu {
 private:
     uint8_t a;
@@ -57,7 +57,7 @@ public:
     void load_a_from_register_address(void* args); // LD A,[r16]
     void load_a_from_immediate_address(void* args); // LD A,[n16]
     void load_a_from_immediate_hardware_address(void* args); // LDH A,[n16]
-    void load_a_from_offset_hardware_address(void* args); // LDH A,[C]
+    void load_a_from_hardware_address_offset_by_c(void* args); // LDH A,[C]
     void store_a_at_hl_address_increment(void* args); // LD [HLI],A
     void store_a_at_hl_address_decrement(void* args); // LD [HLD],A
     void load_a_from_hl_address_increment(void* args); // LD A,[HLI]
