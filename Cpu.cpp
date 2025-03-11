@@ -84,26 +84,8 @@ uint16_t Cpu::get_r16_mem(uint8_t register_number) {
     }
 };
 
-
-
-bool Cpu::get_flag(uint8_t flag_number) {
-    switch (flag_number) {
-        case 0:
-            // NOT Zero
-            return (this->f >> 7 ) == 0;
-        case 1:
-            // Zero
-            return (this->f >> 7 ) == 1; 
-        case 2:
-            // NOT Carry 
-            return (this->f >> 4 ) == 0;
-        case 3:
-            // Carry
-            return (this->f >> 4 ) == 1;
-        default:
-            std::cout << "This shouldn't be called with anything higher than 3";
-            return false;
-    };
+bool Cpu::get_flag(Flag flag) {
+    return this->f & flag;
 };
 
 void Cpu::set_r8(uint8_t register_number, uint8_t value) {
@@ -172,6 +154,10 @@ void Cpu::set_r16_stk(uint8_t register_number, uint16_t value) {
         default:
             std::cout << "This shouldn't be called with anything higher than 3";
     };
+};
+
+void Cpu::set_flag(Flag flag, bool value) {
+    this->f |= (value << flag);
 };
 
 Cpu::Cpu() {
@@ -246,4 +232,56 @@ void Cpu::store_a_at_hardware_address_offset_by_c(void* args) {
 void Cpu::load_a_from_register_address(void* args) {
     uint16_t address = reinterpret_cast<uint16_t>(args);
     this->a = this->ram->get_memory(address);
+};
+// LD A,[r16]
+void Cpu::load_a_from_immediate_address(void* args) {
+    uint16_t address = reinterpret_cast<uint16_t>(args);
+    this->a = this->ram->get_memory(address);
+};
+// LDH A,[n16]
+void Cpu::load_a_from_immediate_hardware_address(void* args) {
+    uint8_t addr_low = reinterpret_cast<uint8_t>(args);
+    this->a = this->ram->get_memory(0xFF00 | addr_low);
+};
+// LDH A,[C]
+void Cpu::load_a_from_hardware_address_offset_by_c(void* args) {
+    this->a = this->ram->get_memory(0xFF00 | this->c);
+};
+// LD [HLI],A
+void Cpu::store_a_at_hl_address_increment(void* args) {
+    uint16_t hl = (this->h << 8) | this->l;
+    this->ram->set_memory(hl, this->a);
+    hl++;
+    this->h = hl >> 8;
+    this->l = hl & 0x00FF;
+};
+// LD [HLD],A
+void Cpu::store_a_at_hl_address_decrement(void* args) {
+    uint16_t hl = (this->h << 8) | this->l;
+    this->ram->set_memory(hl, this->a);
+    hl--;
+    this->h = hl >> 8;
+    this->l = hl & 0x00FF;
+};
+// LD A,[HLI]
+void Cpu::load_a_from_hl_address_increment(void* args) {
+    uint16_t hl = (this->h << 8) | this->l;
+    this->a = this->ram->get_memory(hl);
+    hl++;
+    this->h = hl >> 8;
+    this->l = hl & 0x00FF;
+};
+// LD A,[HLD]
+void Cpu::load_a_from_hl_address_decrement(void* args) {
+    uint16_t hl = (this->h << 8) | this->l;
+    this->a = this->ram->get_memory(hl);
+    hl--;
+    this->h = hl >> 8;
+    this->l = hl & 0x00FF;
+};
+
+// 8-bit arithmetic instructions
+// ADC A,r8
+void Cpu::add_with_carry_register_to_a(void* args) {
+
 };
