@@ -157,7 +157,7 @@ void Cpu::set_r16_stk(uint8_t register_number, uint16_t value) {
 };
 
 void Cpu::set_flag(Flag flag, bool value) {
-    this->f |= (value << flag);
+    this->f = value ? (this->f | flag) : (this->f & ~flag);
 };
 
 Cpu::Cpu() {

@@ -10,7 +10,7 @@ enum SixteenBitReg {
     BC, DE, HL, SP,
 };
 enum Flag {
-    Z = 7, N = 6, H = 5, C = 4
+    Z = 128, N = 64, H = 32, C = 16
 };
 
 
