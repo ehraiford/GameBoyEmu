@@ -10,7 +10,10 @@ enum SixteenBitReg {
     BC, DE, HL, SP,
 };
 enum Flag {
-    Z = 128, N = 64, H = 32, C = 16
+    Z = 128, // Zero 
+    N = 64, // Subtract 
+    H = 32, // Half Carry 
+    C = 16, // Carry
 };
 
 
@@ -42,6 +45,8 @@ private:
     
     bool get_flag(Flag flag);
     void set_flag(Flag flag, bool value);
+    void set_flags_addition(uint16_t op0, uint16_t op1, uint16_t result);
+    void set_flags_subtraction(uint16_t op0, uint16_t op1, uint16_t result);
 public:
     Cpu();      
     ~Cpu();
