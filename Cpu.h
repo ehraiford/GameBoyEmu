@@ -37,11 +37,13 @@ private:
     uint16_t get_r16(uint8_t register_number);
     uint16_t get_r16_stk(uint8_t register_number);
     uint16_t get_r16_mem(uint8_t register_number);
+    uint16_t get_hl();
     uint16_t get_immediate_ram_value(); //todo Should get the immediate value in memory following the decoded opcode and increment PC by 2 
     
     void set_r8(uint8_t register_number, uint8_t value);
     void set_r16(uint8_t register_number, uint16_t value);
     void set_r16_stk(uint8_t register_number, uint16_t value);
+    void set_hl(uint16_t value);
     
     bool get_flag(Flag flag);
     void set_flag(Flag flag, bool value);
