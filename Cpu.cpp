@@ -167,12 +167,14 @@ void Cpu::set_r16_stk(uint8_t register_number, uint16_t value) {
 void Cpu::set_flag(Flag flag, bool value) {
     this->f = value ? (this->f | flag) : (this->f & ~flag);
 };
+// Sets the flags in the standard way for an addition operation.
 void Cpu::set_flags_addition(uint16_t op0, uint16_t op1, uint16_t result) {
     this->set_flag(Flag::Z, (result & 0x00FF) == 0);
     this->set_flag(Flag::N, false);
     this->set_flag(Flag::H, (op0 & 0x0F) + (op1 & 0x0F) > 0x0F);
     this->set_flag(Flag::C, result > 0xFF);
 };
+// Sets the flags in the standard way for a subtraction operation.
 void Cpu::set_flags_subtraction(uint16_t op0, uint16_t op1, uint16_t result) {
     this->set_flag(Flag::Z, (result & 0x00FF) == 0);
     this->set_flag(Flag::N, true);
@@ -466,68 +468,167 @@ void Cpu::subtract_immediate_from_a(void* args) {
 // ADD HL,r16
 void Cpu::add_16bit_register_to_HL(void* args) {
     uint16_t value = reinterpret_cast<uint16_t>(args);
-    uint16_t result = this->get_hl() + value;
+    uint32_t result = this->get_hl() + value;
 
+    this->set_flag(Flag::N, false);
+    this->set_flag(Flag::H, ((this->get_hl() & 0x0FFF) + (value & 0x0FFF)) > 0x0FFF);
+    this->set_flag(Flag::C, result > 0xFFFF);
+    this->set_hl(result);
 };
 // DEC r16
 void Cpu::decrement_16bit_register(void* args) {
+    uint16_t* reg = reinterpret_cast<uint16_t*>(args);
+    *reg -= 1;
 };
 // INC r16
 void Cpu::increment_16bit_register(void* args) {
+    uint16_t* reg = reinterpret_cast<uint16_t*>(args);
+    *reg += 1;
 };
 
 // Bitwise logic instructions
 // AND A,r8
 void Cpu::and_a_with_register(void* args) {
+    uint8_t value = reinterpret_cast<uint8_t>(args);
+    this->a &= value;
+
+    this->set_flag(Flag::Z, this->a == 0);
+    this->set_flag(Flag::N, false);
+    this->set_flag(Flag::H, true);
+    this->set_flag(Flag::C, false);
 };
 // AND A,[HL]
 void Cpu::and_a_with_value_at_hl_address(void* args) {
+    uint8_t value = this->ram->get_memory(this->get_hl());
+    this->a &= value;
+
+    this->set_flag(Flag::Z, this->a == 0);
+    this->set_flag(Flag::N, false);
+    this->set_flag(Flag::H, true);
+    this->set_flag(Flag::C, false);
 };
 // AND A,n8
 void Cpu::and_a_with_immediate(void* args) {
+    uint8_t value = reinterpret_cast<uint8_t>(args);
+    this->a &= value;
 
+    this->set_flag(Flag::Z, this->a == 0);
+    this->set_flag(Flag::N, false);
+    this->set_flag(Flag::H, true);
+    this->set_flag(Flag::C, false);
 };
 // CPL
 void Cpu::invert_a(void* args) {
+    this->a = ~this->a;
+
+    this->set_flag(Flag::N, true);
+    this->set_flag(Flag::H, true);
 };
 // OR A,r8
 void Cpu::or_a_with_register(void* args) {
+    uint8_t value = reinterpret_cast<uint8_t>(args);
+    this->a |= value;
+
+    this->set_flag(Flag::Z, this->a == 0);
+    this->set_flag(Flag::N, false);    
+    this->set_flag(Flag::H, false);    
+    this->set_flag(Flag::C, false);
 };
 // OR A,[HL]
 void Cpu::or_a_with_value_at_hl_address(void* args) {
+    uint8_t value = this->ram->get_memory(this->get_hl());
+    this->a |= value;
+
+    this->set_flag(Flag::Z, this->a == 0);
+    this->set_flag(Flag::N, false);    
+    this->set_flag(Flag::H, false);    
+    this->set_flag(Flag::C, false);
 };
 // OR A,n8
 void Cpu::or_a_with_immediate(void* args) {
+    uint8_t value = reinterpret_cast<uint8_t>(args);
+    this->a |= value;
+
+    this->set_flag(Flag::Z, this->a == 0);
+    this->set_flag(Flag::N, false);    
+    this->set_flag(Flag::H, false);    
+    this->set_flag(Flag::C, false);
 };
 // XOR A,r8
 void Cpu::xor_a_with_register(void* args) {
+    uint8_t value = reinterpret_cast<uint8_t>(args);
+    this->a ^= value;
+
+    this->set_flag(Flag::Z, this->a == 0);
+    this->set_flag(Flag::N, false);    
+    this->set_flag(Flag::H, false);    
+    this->set_flag(Flag::C, false);
 };
 // XOR A,[HL]
 void Cpu::xor_a_with_value_at_hl_address(void* args) {
+    uint8_t value = this->ram->get_memory(this->get_hl());
+    this->a ^= value;
+
+    this->set_flag(Flag::Z, this->a == 0);
+    this->set_flag(Flag::N, false);    
+    this->set_flag(Flag::H, false);    
+    this->set_flag(Flag::C, false);
 };
 // XOR A,n8
 void Cpu::xor_a_with_immediate(void* args) {
+    uint8_t value = reinterpret_cast<uint8_t>(args);
+    this->a ^= value;
+
+    this->set_flag(Flag::Z, this->a == 0);
+    this->set_flag(Flag::N, false);    
+    this->set_flag(Flag::H, false);    
+    this->set_flag(Flag::C, false);
 };
 
 // Bitflag instructions
 // BIT u3,r8
 void Cpu::set_zflag_if_register_bit_not_set(void* args) {
+    uint8_t bit_position = reinterpret_cast<uint8_t>(args);
+    uint8_t reg_value = reinterpret_cast<uint8_t>(args + sizeof(uint8_t));
+    this->set_flag(Flag::Z, (reg_value & (1 << bit_position)) == 0);
+
+    this->set_flag(Flag::N, false);
+    this->set_flag(Flag::H, true);
 };
 // BIT u3,[HL]
 void Cpu::set_zflag_if_value_at_hl_address_bit_not_set(void* args) {
+    uint8_t bit_position = reinterpret_cast<uint8_t>(args);
+    uint8_t value = this->ram->get_memory(this->get_hl());
+
+    this->set_flag(Flag::Z, (value & (1 << bit_position)) == 0);
+    this->set_flag(Flag::N, false);
+    this->set_flag(Flag::H, true);
 };
 // RES u3,r8
 void Cpu::clear_register_bit(void* args) {
+    uint8_t bit_position = reinterpret_cast<uint8_t>(args);
+    uint8_t* reg = reinterpret_cast<uint8_t*>(args + sizeof(uint8_t));
+    *reg &= ~(1 << bit_position);
 };
 // RES u3,[HL]
 void Cpu::clear_value_at_hl_address_bit(void* args) {
+    uint8_t bit_position = reinterpret_cast<uint8_t>(args);
+    uint8_t value = this->ram->get_memory(this->get_hl());
+    value &= ~(1 << bit_position);
+    this->ram->set_memory(this->get_hl(), value);
 };
 // SET u3,r8
 void Cpu::set_register_bit(void* args) {
+    uint8_t bit_position = reinterpret_cast<uint8_t>(args);
+    uint8_t* reg = reinterpret_cast<uint8_t*>(args + sizeof(uint8_t));
+    *reg |= 1 << bit_position;
 };
 // SET u3,[HL]
 void Cpu::set_value_at_hl_address_bit(void* args) {
-
+    uint8_t bit_position = reinterpret_cast<uint8_t>(args);
+    uint8_t value = this->ram->get_memory(this->get_hl());
+    value |= 1 << bit_position;
+    this->ram->set_memory(this->get_hl(), value);
 };
 
 // Bit shift instructions
