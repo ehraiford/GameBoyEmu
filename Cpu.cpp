@@ -634,43 +634,195 @@ void Cpu::set_value_at_hl_address_bit(void* args) {
 // Bit shift instructions
 // RL r8
 void Cpu::rotate_register_left(void* args) {
+    uint8_t* reg = reinterpret_cast<uint8_t*>(args);
+    uint8_t value = *reg;
+    bool new_carry = value & 0b10000000;
+
+    value <<= 1;
+    value &= 0b11111110;
+    value |= this->get_flag(Flag::C);
+    
+    this->set_flag(Flag::Z, value == 0);
+    this->set_flag(Flag::N, false); 
+    this->set_flag(Flag::H, false);
+    this->set_flag(Flag::C, new_carry);
+    *reg = value;
 };
 // RL [HL]
 void Cpu::rotate_value_at_hl_address_left(void* args) {
+    uint8_t value = this->ram->get_memory(this->get_hl());
+    bool new_carry = value & 0b10000000;
+
+    value <<= 1;
+    value &= 0b11111110;
+    value |= this->get_flag(Flag::C);
+
+    this->set_flag(Flag::Z, value == 0);
+    this->set_flag(Flag::N, false);
+    this->set_flag(Flag::H, false);
+    this->set_flag(Flag::C, new_carry);
+    this->ram->set_memory(this->get_hl(), value);
 };
 // RLA
 void Cpu::rotate_a_left(void* args) {
+    uint8_t a = this->a;
+
+    bool new_carry = this->a & 0b10000000;
+    a <<= 1;
+    a &= 0b11111110;
+    a |= this->get_flag(Flag::C);
+
+    this->set_flag(Flag::Z, false);
+    this->set_flag(Flag::N, false);
+    this->set_flag(Flag::H, false);
+    this->set_flag(Flag::C, new_carry);
+    this->a = a;
 };
 // RLC r8
 void Cpu::rotate_register_left_carry(void* args) {
+    uint8_t* reg = reinterpret_cast<uint8_t*>(args);
+    uint8_t value = *reg;
+    bool new_carry = value & 0b10000000;
 
+    value <<= 1;
+    value &= 0b11111110;
+    value |= new_carry;
+    
+    this->set_flag(Flag::Z, value == 0);
+    this->set_flag(Flag::N, false); 
+    this->set_flag(Flag::H, false);
+    this->set_flag(Flag::C, new_carry);
+    *reg = value;
 };
 // RLC [HL]
 void Cpu::rotate_value_at_hl_address_left_carry(void* args) {
+    uint8_t value = this->ram->get_memory(this->get_hl());
+    bool new_carry = value & 0b10000000;
+
+    value <<= 1;
+    value &= 0b11111110;
+    value |= new_carry;
+
+    this->set_flag(Flag::Z, value == 0);
+    this->set_flag(Flag::N, false);
+    this->set_flag(Flag::H, false);
+    this->set_flag(Flag::C, new_carry);
+    this->ram->set_memory(this->get_hl(), value);
 };
 // RLCA
 void Cpu::rotate_a_left_carry(void* args) {
+    uint8_t a = this->a;
+
+    bool new_carry = this->a & 0b10000000;
+    a <<= 1;
+    a &= 0b11111110;
+    a |= new_carry;
+
+    this->set_flag(Flag::Z, false);
+    this->set_flag(Flag::N, false);
+    this->set_flag(Flag::H, false);
+    this->set_flag(Flag::C, new_carry);
+    this->a = a;
 };
 // RR r8
 void Cpu::rotate_register_right(void* args) {
+    uint8_t* reg = reinterpret_cast<uint8_t*>(args);
+    uint8_t value = *reg;
+    bool new_carry = value & 0b1;
+
+    value >>= 1;
+    value &= 0b01111111;
+    value |= this->get_flag(Flag::C) << 7;
+    
+    this->set_flag(Flag::Z, value == 0);
+    this->set_flag(Flag::N, false); 
+    this->set_flag(Flag::H, false);
+    this->set_flag(Flag::C, new_carry);
+    *reg = value;
 };
 // RR [HL]
 void Cpu::rotate_value_at_hl_address_right(void* args) {
+    uint8_t value = this->ram->get_memory(this->get_hl());
+    bool new_carry = value & 0b1;
+
+    value >>= 1;
+    value &= 0b01111111;
+    value |= this->get_flag(Flag::C) << 7;
+
+    this->set_flag(Flag::Z, value == 0);
+    this->set_flag(Flag::N, false);
+    this->set_flag(Flag::H, false);
+    this->set_flag(Flag::C, new_carry);
+    this->ram->set_memory(this->get_hl(), value);
 };
 // RRA
 void Cpu::rotate_a_right(void* args) {
+    uint8_t a = this->a;
+
+    bool new_carry = this->a & 0b1;
+    a >>= 1;
+    a &= 0b01111111;
+    a |= this->get_flag(Flag::C) << 7;
+
+    this->set_flag(Flag::Z, false);
+    this->set_flag(Flag::N, false);
+    this->set_flag(Flag::H, false);
+    this->set_flag(Flag::C, new_carry);
+    this->a = a;
 };
 // RRC r8
 void Cpu::rotate_register_right_with_carry(void* args) {
+    uint8_t* reg = reinterpret_cast<uint8_t*>(args);
+    uint8_t value = *reg;
+    bool new_carry = value & 0b1;
+
+    value >>= 1;
+    value &= 0b01111111;
+    value |= new_carry << 7;
+    
+    this->set_flag(Flag::Z, value == 0);
+    this->set_flag(Flag::N, false); 
+    this->set_flag(Flag::H, false);
+    this->set_flag(Flag::C, new_carry);
+    *reg = value;
 };
 // RRC [HL]
 void Cpu::rotate_value_at_hl_address_right_with_carry(void* args) {
+    uint8_t value = this->ram->get_memory(this->get_hl());
+    bool new_carry = value & 0b1;
+
+    value >>= 1;
+    value &= 0b01111111;
+    value |= new_carry << 7;
+
+    this->set_flag(Flag::Z, value == 0);
+    this->set_flag(Flag::N, false);
+    this->set_flag(Flag::H, false);
+    this->set_flag(Flag::C, new_carry);
+    this->ram->set_memory(this->get_hl(), value);
 };
 // RRCA
 void Cpu::rotate_a_right_with_carry(void* args) {
+    uint8_t a = this->a;
+
+    bool new_carry = this->a & 0b1;
+    a >>= 1;
+    a &= 0b01111111;
+    a |= new_carry << 7;
+
+    this->set_flag(Flag::Z, false);
+    this->set_flag(Flag::N, false);
+    this->set_flag(Flag::H, false);
+    this->set_flag(Flag::C, new_carry);
+    this->a = a;
 };
 // SLA r8
 void Cpu::shift_register_left_arithmetically(void* args) {
+    uint8_t* reg = reinterpret_cast<uint8_t*>(args);
+    uint8_t value = *reg;
+    
+    bool new_carry = *reg & 0b1;
+    value <<= 1;
 };
 // SLA [HL]
 void Cpu::shift_value_at_hl_address_left_arithmetically(void* args) {
