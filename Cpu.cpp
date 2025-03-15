@@ -75,34 +75,35 @@ Cpu::Cpu() {
 Cpu::~Cpu() {};
 
 
-// opcodes
+// OPCODES
+
 // LD r8,r8
 void Cpu::copy(void* args) {
     uint8_t* dest = reinterpret_cast<uint8_t*>(args);
-    uint8_t val = reinterpret_cast<uint8_t>(args + sizeof(uint8_t*));
-    *dest = val;
+    uint8_t value = *reinterpret_cast<uint8_t*>(args) + sizeof(uint8_t*);
+    *dest = value;
 };
 // LD r8,n8
 void Cpu::load_immediate_8bit(void* args) {
     uint8_t* dest = reinterpret_cast<uint8_t*>(args);
-    uint8_t val = reinterpret_cast<uint8_t>(args + sizeof(uint8_t*));
-    *dest = val;
+    uint8_t value = *reinterpret_cast<uint8_t*>(args) + sizeof(uint8_t*);
+    *dest = value;
 };
 // LD r16,n16
 void Cpu::load_immediate_16bit(void* args) {
     uint16_t* dest = reinterpret_cast<uint16_t*>(args);
-    uint16_t val = reinterpret_cast<uint16_t>(args + sizeof(uint16_t*));
-    *dest = val;
+    uint16_t value = *reinterpret_cast<uint16_t*>(args) + sizeof(uint16_t*);
+    *dest = value;
 };
 // LD [HL],r8
 void Cpu::store_at_hl_address(void* args) {
-    uint8_t val = reinterpret_cast<uint8_t>(args);
-    this->ram->set_memory(this->get_hl(), val);
+    uint8_t value = *reinterpret_cast<uint8_t*>(args);
+    this->ram->set_memory(this->get_hl(), value);
 };
 // LD [HL],n8
 void Cpu::store_immediate_at_hl_address(void* args) {
-    uint8_t val = reinterpret_cast<uint8_t>(args);
-    this->ram->set_memory(this->get_hl(), val);
+    uint8_t value = *reinterpret_cast<uint8_t*>(args);
+    this->ram->set_memory(this->get_hl(), value);
 };
 // LD r8,[HL]
 void Cpu::load_from_hl_address(void* args) {
@@ -111,17 +112,17 @@ void Cpu::load_from_hl_address(void* args) {
 };
 // LD [r16],A
 void Cpu::store_a_at_register_address(void* args) {
-    uint16_t address = reinterpret_cast<uint16_t>(args);
+    uint16_t address = *reinterpret_cast<uint16_t*>(args);
     this->ram->set_memory(address, this->a);
 };
 // LD [n16],A
 void Cpu::store_a_at_immediate_address(void* args) {
-    uint16_t address = reinterpret_cast<uint16_t>(args);
+    uint16_t address = *reinterpret_cast<uint16_t*>(args);
     this->ram->set_memory(address, this->a);
 };
 // LDH [n16],A
 void Cpu::store_a_at_immediate_hardware_address(void* args) {
-    uint8_t addr_low = reinterpret_cast<uint8_t>(args);
+    uint8_t addr_low = *reinterpret_cast<uint8_t*>(args);
     this->ram->set_memory(0xFF00 | addr_low, this->a);
 };
 // LDH [C],A
@@ -130,18 +131,18 @@ void Cpu::store_a_at_hardware_address_offset_by_c(void* args) {
 };
 // LD A,[r16]
 void Cpu::load_a_from_register_address(void* args) {
-    uint16_t address = reinterpret_cast<uint16_t>(args);
+    uint16_t address = *reinterpret_cast<uint16_t*>(args);
     this->a = this->ram->get_memory(address);
 };
 // LD A,[r16]
 void Cpu::load_a_from_immediate_address(void* args) {
-    uint16_t address = reinterpret_cast<uint16_t>(args);
+    uint16_t address = *reinterpret_cast<uint16_t*>(args);
     this->a = this->ram->get_memory(address);
 };
 // LDH A,[n16]
 void Cpu::load_a_from_immediate_hardware_address(void* args) {
-    uint8_t addr_low = reinterpret_cast<uint8_t>(args);
-    this->a = this->ram->get_memory(0xFF00 | addr_low);
+    uint8_t* addr_low = reinterpret_cast<uint8_t*>(args);
+    this->a = this->ram->get_memory(0xFF00 | *addr_low);
 };
 // LDH A,[C]
 void Cpu::load_a_from_hardware_address_offset_by_c(void* args) {
@@ -183,7 +184,7 @@ void Cpu::load_a_from_hl_address_decrement(void* args) {
 // 8-bit arithmetic instructions
 // ADC A,r8
 void Cpu::add_with_carry_register_to_a(void* args) {
-    uint8_t value = reinterpret_cast<uint8_t>(args) + ((this->get_flag(Flag::C_FLAG) << 8));
+    uint8_t value = *reinterpret_cast<uint8_t*>(args) + ((this->get_flag(Flag::C_FLAG) << 8));
     uint16_t result = this->a + value;
     
     this->set_flags_addition(this->a, value, result);
@@ -192,7 +193,7 @@ void Cpu::add_with_carry_register_to_a(void* args) {
 
 // ADC A,[HL]
 void Cpu::add_with_carry_from_hl_address_to_a(void* args) {
-    uint8_t value = reinterpret_cast<uint8_t>(args) + (this->get_flag(Flag::C_FLAG) << 8);
+    uint8_t value = *reinterpret_cast<uint8_t*>(args) + (this->get_flag(Flag::C_FLAG) << 8);
     uint16_t result = this->a + value;
     
     this->set_flags_addition(this->a, value, result);
@@ -201,7 +202,7 @@ void Cpu::add_with_carry_from_hl_address_to_a(void* args) {
 
 // ADC A,n8
 void Cpu::add_with_carry_immediate_to_a(void* args) {
-    uint8_t value = reinterpret_cast<uint8_t>(args) + (this->get_flag(Flag::C_FLAG) << 8);
+    uint8_t value = *reinterpret_cast<uint8_t*>(args) + (this->get_flag(Flag::C_FLAG) << 8);
     uint16_t result = this->a + value;
     
     this->set_flags_addition(this->a, value, result);
@@ -210,7 +211,7 @@ void Cpu::add_with_carry_immediate_to_a(void* args) {
 
 // ADD A,r8
 void Cpu::add_register_to_a(void* args) {
-    uint8_t value = reinterpret_cast<uint8_t>(args);
+    uint8_t value = *reinterpret_cast<uint8_t*>(args);
     uint16_t result = this->a + value;
 
     this->set_flags_addition(this->a, value, result);
@@ -226,7 +227,7 @@ void Cpu::add_value_at_hl_address_to_a(void* args) {
 };
 // ADD A,n8
 void Cpu::add_immediate_to_a(void* args) {
-    uint8_t value = reinterpret_cast<uint8_t>(args);
+    uint8_t value = *reinterpret_cast<uint8_t*>(args);
     uint16_t result = this->a + value;
 
     this->set_flags_addition(this->a, value, result);
@@ -234,7 +235,7 @@ void Cpu::add_immediate_to_a(void* args) {
 };
 // CP A,r8
 void Cpu::compare_a_with_register(void* args) {
-    uint8_t value = reinterpret_cast<uint8_t>(args);
+    uint8_t value = *reinterpret_cast<uint8_t*>(args);
     uint8_t result = this->a - value;
 
     this->set_flags_subtraction(this->a, value, result);
@@ -248,7 +249,7 @@ void Cpu::compare_a_with_value_at_hl_address(void* args) {
 };
 // CP A,n8
 void Cpu::compare_a_with_immediate(void* args) {
-    uint8_t value = reinterpret_cast<uint8_t>(args);
+    uint8_t value = *reinterpret_cast<uint8_t*>(args);
     uint8_t result = this->a - value;
 
     this->set_flags_subtraction(this->a, value, result);
@@ -295,7 +296,7 @@ void Cpu::increment_value_at_hl_address(void* args) {
 };
 // SBC A,r8
 void Cpu::subtract_with_carry_register_from_a(void* args) {
-    uint8_t value = reinterpret_cast<uint8_t>(args) + ((this->get_flag(Flag::C_FLAG) << 8));
+    uint8_t value = *reinterpret_cast<uint8_t*>(args) + ((this->get_flag(Flag::C_FLAG) << 8));
     uint8_t result = this->a - value;
     
     this->set_flags_subtraction(this->a, value, result);
@@ -311,7 +312,7 @@ void Cpu::subtract_with_carry_value_at_hl_address_from_a(void* args) {
 };
 // SBC A,n8
 void Cpu::subtract_with_carry_immediate_from_a(void* args) {
-    uint8_t value = reinterpret_cast<uint8_t>(args) + ((this->get_flag(Flag::C_FLAG) << 8));
+    uint8_t value = *reinterpret_cast<uint8_t*>(args) + ((this->get_flag(Flag::C_FLAG) << 8));
     uint8_t result = this->a - value;
 
     this->set_flags_subtraction(this->a, value, result);
@@ -319,7 +320,7 @@ void Cpu::subtract_with_carry_immediate_from_a(void* args) {
 };
 // SUB A,r8
 void Cpu::subtract_register_from_a(void* args) {
-    uint8_t value = reinterpret_cast<uint8_t>(args);
+    uint8_t value = *reinterpret_cast<uint8_t*>(args);
     uint8_t result = this->a - value; 
 
     this->set_flags_subtraction(this->a, value, result);
@@ -335,7 +336,7 @@ void Cpu::subtract_value_at_hl_address_from_a(void* args) {
 };
 // SUB A,n8
 void Cpu::subtract_immediate_from_a(void* args) {
-    uint8_t value = reinterpret_cast<uint8_t>(args);
+    uint8_t value = *reinterpret_cast<uint8_t*>(args);
     uint8_t result = this->a - value;
 
     this->set_flags_subtraction(this->a, value, result);
@@ -345,7 +346,7 @@ void Cpu::subtract_immediate_from_a(void* args) {
 // 16-bit arithmetic operations
 // ADD HL,r16
 void Cpu::add_16bit_register_to_HL(void* args) {
-    uint16_t value = reinterpret_cast<uint16_t>(args);
+    uint16_t value = *reinterpret_cast<uint16_t*>(args);
     uint32_t result = this->get_hl() + value;
 
     this->set_flag(Flag::N_FLAG, false);
@@ -367,7 +368,7 @@ void Cpu::increment_16bit_register(void* args) {
 // Bitwise logic instructions
 // AND A,r8
 void Cpu::and_a_with_register(void* args) {
-    uint8_t value = reinterpret_cast<uint8_t>(args);
+    uint8_t value = *reinterpret_cast<uint8_t*>(args);
     this->a &= value;
 
     this->set_flag(Flag::Z_FLAG, this->a == 0);
@@ -387,7 +388,7 @@ void Cpu::and_a_with_value_at_hl_address(void* args) {
 };
 // AND A,n8
 void Cpu::and_a_with_immediate(void* args) {
-    uint8_t value = reinterpret_cast<uint8_t>(args);
+    uint8_t value = *reinterpret_cast<uint8_t*>(args);
     this->a &= value;
 
     this->set_flag(Flag::Z_FLAG, this->a == 0);
@@ -404,7 +405,7 @@ void Cpu::invert_a(void* args) {
 };
 // OR A,r8
 void Cpu::or_a_with_register(void* args) {
-    uint8_t value = reinterpret_cast<uint8_t>(args);
+    uint8_t value = *reinterpret_cast<uint8_t*>(args);
     this->a |= value;
 
     this->set_flag(Flag::Z_FLAG, this->a == 0);
@@ -424,7 +425,7 @@ void Cpu::or_a_with_value_at_hl_address(void* args) {
 };
 // OR A,n8
 void Cpu::or_a_with_immediate(void* args) {
-    uint8_t value = reinterpret_cast<uint8_t>(args);
+    uint8_t value = *reinterpret_cast<uint8_t*>(args);
     this->a |= value;
 
     this->set_flag(Flag::Z_FLAG, this->a == 0);
@@ -434,7 +435,7 @@ void Cpu::or_a_with_immediate(void* args) {
 };
 // XOR A,r8
 void Cpu::xor_a_with_register(void* args) {
-    uint8_t value = reinterpret_cast<uint8_t>(args);
+    uint8_t value = *reinterpret_cast<uint8_t*>(args);
     this->a ^= value;
 
     this->set_flag(Flag::Z_FLAG, this->a == 0);
@@ -454,7 +455,7 @@ void Cpu::xor_a_with_value_at_hl_address(void* args) {
 };
 // XOR A,n8
 void Cpu::xor_a_with_immediate(void* args) {
-    uint8_t value = reinterpret_cast<uint8_t>(args);
+    uint8_t value = *reinterpret_cast<uint8_t*>(args);
     this->a ^= value;
 
     this->set_flag(Flag::Z_FLAG, this->a == 0);
@@ -466,8 +467,8 @@ void Cpu::xor_a_with_immediate(void* args) {
 // Bitflag instructions
 // BIT u3,r8
 void Cpu::set_zflag_if_register_bit_not_set(void* args) {
-    uint8_t bit_position = reinterpret_cast<uint8_t>(args);
-    uint8_t reg_value = reinterpret_cast<uint8_t>(args + sizeof(uint8_t));
+    uint8_t bit_position = *reinterpret_cast<uint8_t*>(args);
+    uint8_t reg_value = *reinterpret_cast<uint8_t*>(args) + sizeof(uint8_t);
     this->set_flag(Flag::Z_FLAG, (reg_value & (1 << bit_position)) == 0);
 
     this->set_flag(Flag::N_FLAG, false);
@@ -475,7 +476,7 @@ void Cpu::set_zflag_if_register_bit_not_set(void* args) {
 };
 // BIT u3,[HL]
 void Cpu::set_zflag_if_value_at_hl_address_bit_not_set(void* args) {
-    uint8_t bit_position = reinterpret_cast<uint8_t>(args);
+    uint8_t bit_position = *reinterpret_cast<uint8_t*>(args);
     uint8_t value = this->ram->get_memory(this->get_hl());
 
     this->set_flag(Flag::Z_FLAG, (value & (1 << bit_position)) == 0);
@@ -484,26 +485,26 @@ void Cpu::set_zflag_if_value_at_hl_address_bit_not_set(void* args) {
 };
 // RES u3,r8
 void Cpu::clear_register_bit(void* args) {
-    uint8_t bit_position = reinterpret_cast<uint8_t>(args);
-    uint8_t* reg = reinterpret_cast<uint8_t*>(args + sizeof(uint8_t));
+    uint8_t bit_position = *reinterpret_cast<uint8_t*>(args);
+    uint8_t* reg = reinterpret_cast<uint8_t*>(args) + sizeof(uint8_t*);
     *reg &= ~(1 << bit_position);
 };
 // RES u3,[HL]
 void Cpu::clear_value_at_hl_address_bit(void* args) {
-    uint8_t bit_position = reinterpret_cast<uint8_t>(args);
+    uint8_t bit_position = *reinterpret_cast<uint8_t*>(args);
     uint8_t value = this->ram->get_memory(this->get_hl());
     value &= ~(1 << bit_position);
     this->ram->set_memory(this->get_hl(), value);
 };
 // SET u3,r8
 void Cpu::set_register_bit(void* args) {
-    uint8_t bit_position = reinterpret_cast<uint8_t>(args);
-    uint8_t* reg = reinterpret_cast<uint8_t*>(args + sizeof(uint8_t));
+    uint8_t bit_position = *reinterpret_cast<uint8_t*>(args);
+    uint8_t* reg = reinterpret_cast<uint8_t*>(args) + sizeof(uint8_t);
     *reg |= 1 << bit_position;
 };
 // SET u3,[HL]
 void Cpu::set_value_at_hl_address_bit(void* args) {
-    uint8_t bit_position = reinterpret_cast<uint8_t>(args);
+    uint8_t bit_position = *reinterpret_cast<uint8_t*>(args);
     uint8_t value = this->ram->get_memory(this->get_hl());
     value |= 1 << bit_position;
     this->ram->set_memory(this->get_hl(), value);
@@ -803,7 +804,7 @@ void Cpu::swap_value_at_hl_address_nibbles(void* args) {
 // Jump and Subroutine instructions
 // CALL n16
 void Cpu::call(void* args) {
-    uint16_t call_address = reinterpret_cast<uint16_t>(args);
+    uint16_t call_address = *reinterpret_cast<uint16_t*>(args);
     uint16_t pc = this->pc;
 
     this->push_to_stack(pc);
@@ -814,7 +815,7 @@ void Cpu::call_conditionally(void* args) {
     Condition condition = *reinterpret_cast<Condition*>(args);
 
     if (this->condition_is_met(condition)) {
-        this->call(args + sizeof(Condition*));
+        this->call(reinterpret_cast<int16_t*>(args) + sizeof(Condition*));
     }
 };
 // JP HL
@@ -823,7 +824,7 @@ void Cpu::jump_to_value_at_hl_address(void* args) {
 };
 // JP n16
 void Cpu::jump_to_immediate(void* args) {
-    uint16_t value = reinterpret_cast<uint16_t>(args);
+    uint16_t value = *reinterpret_cast<uint16_t*>(args);
     this->pc = value;
 };
 // JP cc,n16
@@ -831,12 +832,12 @@ void Cpu::jump_to_immediate_conditionally(void* args) {
     Condition condition = *reinterpret_cast<Condition*>(args);
 
     if (this->condition_is_met(condition)) {
-        this->jump_to_immediate(args + sizeof(Condition*));
+        this->jump_to_immediate(reinterpret_cast<int16_t*>(args) + sizeof(Condition*));
     }
 };
 // JR n16
 void Cpu::jump_relative_to_immediate(void* args) {
-    int16_t offset = reinterpret_cast<int8_t>(args); 
+    int16_t offset = *reinterpret_cast<int8_t*>(args); 
     this->pc += offset;
 };
 // JR cc,n16
@@ -844,7 +845,7 @@ void Cpu::jump_relative_to_immediate_conditionally(void* args) {
     Condition condition = *reinterpret_cast<Condition*>(args);
 
     if (this->condition_is_met(condition)) {
-        this->jump_relative_to_immediate(args + sizeof(Condition*));
+        this->jump_relative_to_immediate(reinterpret_cast<int8_t*>(args) + sizeof(Condition*));
     }
 };
 // RET
@@ -856,7 +857,7 @@ void Cpu::return_from_subroutine_conditionally(void* args) {
     Condition condition = *reinterpret_cast<Condition*>(args);
 
     if (this->condition_is_met(condition)) {
-        this->return_from_subroutine(args + sizeof(Condition*));
+        this->return_from_subroutine(nullptr);
     }
 };
 // RETI
@@ -866,7 +867,7 @@ void Cpu::return_from_interrupt_subroutine(void* args) {
 };
 // RST vec
 void Cpu::call_address(void* args) {
-    uint16_t address = reinterpret_cast<uint8_t>(args);
+    uint16_t address = *reinterpret_cast<uint8_t*>(args);
     uint16_t pc = this->pc;
 
     this->push_to_stack(pc);
@@ -900,7 +901,7 @@ void Cpu::add_sp_to_hl(void* args) {
 };
 // ADD SP,e8
 void Cpu::add_signed_immediate_to_sp(void* args) {
-    int8_t immediate = reinterpret_cast<uint8_t>(args);
+    int8_t immediate = *reinterpret_cast<uint8_t*>(args);
     uint16_t result = this->sp + immediate;
 
     this->set_flags_addition(this->sp, immediate, result);
@@ -916,18 +917,18 @@ void Cpu::increment_sp(void* args) {
 };
 // LD SP,n16
 void Cpu::load_sp_from_immediate_16bit(void* args) {
-    uint16_t value = reinterpret_cast<uint16_t>(args);
+    uint16_t value = *reinterpret_cast<uint16_t*>(args);
     this->sp = value;
 };
 // LD [n16],SP
 void Cpu::store_sp_at_immediate_address(void* args) {
-    uint16_t address = reinterpret_cast<uint16_t>(args);
+    uint16_t address = *reinterpret_cast<uint16_t*>(args);
     this->ram->set_memory(address, this->sp);
     this->ram->set_memory(address+1, this->sp >> 8);
 };
 // LD HL,SP+e8
 void Cpu::load_hl_from_sp_plus_signed_immediate(void* args){
-    int8_t value = reinterpret_cast<int8_t>(args);
+    int8_t value = *reinterpret_cast<int8_t*>(args);
     uint16_t result = this->sp + value;
 
     this->set_flags_addition(this->sp, value, result);
@@ -988,7 +989,7 @@ void Cpu::decimal_adjust_accumulator(void* args) {
         }
         result = this->a - adjustment;
     } else {
-        if (this->get_flag(Flag::H_FLAG) || this->a & 0xF > 0x9) {
+        if (this->get_flag(Flag::H_FLAG) || (this->a & 0xF) > 0x9) {
             adjustment += 0x6;
         }
         if (this->get_flag(Flag::C_FLAG) || this->a > 0x99) {
