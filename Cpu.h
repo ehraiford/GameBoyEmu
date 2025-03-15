@@ -3,17 +3,17 @@
 #include <iostream>
 #include "Ram.h"
 
-enum EightBitReg {
-    B, C, D, E, F, H, L, A
-};
-enum SixteenBitReg {
-    BC, DE, HL, SP,
-};
 enum Flag {
-    Z = 128, // Zero 
-    N = 64, // Subtract 
-    H = 32, // Half Carry 
-    C = 16, // Carry
+    Z_FLAG = 128, // Zero 
+    N_FLAG = 64, // Subtract 
+    H_FLAG = 32, // Half Carry 
+    C_FLAG = 16, // Carry
+};
+enum Condition {
+    NZ = 0,
+    Z = 1,
+    NC = 2,
+    C = 3,
 };
 
 
@@ -30,25 +30,20 @@ private:
     uint8_t l;
     uint16_t sp;
     uint16_t pc;
+    bool interrupts_enabled;
     Ram* ram;
 
-
-    uint8_t get_r8(uint8_t register_number);
-    uint16_t get_r16(uint8_t register_number);
-    uint16_t get_r16_stk(uint8_t register_number);
-    uint16_t get_r16_mem(uint8_t register_number);
     uint16_t get_hl();
-    uint16_t get_immediate_ram_value(); //todo Should get the immediate value in memory following the decoded opcode and increment PC by 2 
-    
-    void set_r8(uint8_t register_number, uint8_t value);
-    void set_r16(uint8_t register_number, uint16_t value);
-    void set_r16_stk(uint8_t register_number, uint16_t value);
     void set_hl(uint16_t value);
     
+    void push_to_stack(uint16_t value);
+    uint16_t pop_from_stack();
+
     bool get_flag(Flag flag);
     void set_flag(Flag flag, bool value);
     void set_flags_addition(uint16_t op0, uint16_t op1, uint16_t result);
     void set_flags_subtraction(uint16_t op0, uint16_t op1, uint16_t result);
+    bool condition_is_met(Condition condition);
 public:
     Cpu();      
     ~Cpu();
@@ -143,8 +138,8 @@ public:
     void swap_value_at_hl_address_nibbles(void* args); // SWAP [HL]
 
     // Jump and Subroutine instructions
-    void push_next_address_to_stack(void* args); // CALL n16
-    void push_next_address_to_stack_conditionally(void* args); // CALL cc,n16
+    void call(void* args); // CALL n16
+    void call_conditionally(void* args); // CALL cc,n16
     void jump_to_value_at_hl_address(void* args); // JP HL
     void jump_to_immediate(void* args); // JP n16
     void jump_to_immediate_conditionally(void* args); // JP cc,n16
@@ -160,7 +155,7 @@ public:
     void set_carry_flag(void* args); // SCF
 
     // Stack instructions
-    void add_hl_to_sp(void* args); // ADD HL,SP
+    void add_sp_to_hl(void* args); // ADD HL,SP
     void add_signed_immediate_to_sp(void* args);// ADD SP,e8
     void decrement_sp(void* args); // DEC SP
     void increment_sp(void* args); // INC SP
