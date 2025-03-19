@@ -33,14 +33,14 @@ void Cpu::set_flag(Flag flag, bool value) {
 };
 // Sets the flags in the standard way for a standard addition operation.
 void Cpu::set_flags_addition(uint16_t op0, uint16_t op1, uint16_t result) {
-    this->set_flag(Flag::Z_FLAG, (result & 0x00FF) == 0);
+    this->set_flag(Flag::Z_FLAG, (result & 0x00FF));
     this->set_flag(Flag::N_FLAG, false);
     this->set_flag(Flag::H_FLAG, (op0 & 0x0F) + (op1 & 0x0F) > 0x0F);
     this->set_flag(Flag::C_FLAG, result > 0xFF);
 };
 // Sets the flags in the standard way for a standard subtraction operation.
 void Cpu::set_flags_subtraction(uint16_t op0, uint16_t op1, uint16_t result) {
-    this->set_flag(Flag::Z_FLAG, (result & 0x00FF) == 0);
+    this->set_flag(Flag::Z_FLAG, (result & 0x00FF));
     this->set_flag(Flag::N_FLAG, true);
     this->set_flag(Flag::H_FLAG, (op0 & 0x0F) < (op1 & 0x0F));
     this->set_flag(Flag::C_FLAG, op0 < op1);
@@ -74,6 +74,27 @@ Cpu::Cpu() {
 };
 Cpu::~Cpu() {};
 
+uint8_t* Cpu::get_b_pointer() { return &this->b; };
+uint8_t* Cpu::get_c_pointer() { return &this->c; };
+uint8_t* Cpu::get_d_pointer() { return &this->d; };
+uint8_t* Cpu::get_e_pointer() { return &this->e; };
+uint8_t* Cpu::get_f_pointer() { return &this->f; };
+uint8_t* Cpu::get_a_pointer() { return &this->a; };
+uint8_t* Cpu::get_h_pointer() { return &this->h; };
+uint8_t* Cpu::get_l_pointer() { return &this->l; };
+
+uint16_t* Cpu::get_bc_pointer() {
+    return reinterpret_cast<uint16_t*>(&this->b);
+}
+uint16_t* Cpu::get_de_pointer() {
+    return reinterpret_cast<uint16_t*>(&this->d);
+}
+uint16_t* Cpu::get_af_pointer() {
+    return reinterpret_cast<uint16_t*>(&this->a);
+}
+uint16_t* Cpu::get_hl_pointer() {
+    return reinterpret_cast<uint16_t*>(&this->h);
+}
 
 // OPCODES
 

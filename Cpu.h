@@ -20,13 +20,13 @@ enum Condition {
 // TODO Check runtime alignment... 
 class Cpu {
 private:
-    uint8_t a;
-    uint8_t b;
+    alignas(uint16_t)uint8_t b;
     uint8_t c;
-    uint8_t d;
+    alignas(uint16_t)uint8_t d;
     uint8_t e;
+    alignas(uint16_t)uint8_t a;
     uint8_t f;
-    uint8_t h;
+    alignas(uint16_t)uint8_t h;
     uint8_t l;
     uint16_t sp;
     uint16_t pc;
@@ -47,6 +47,20 @@ private:
 public:
     Cpu();      
     ~Cpu();
+
+    uint8_t* get_b_pointer();
+    uint8_t* get_c_pointer();
+    uint8_t* get_d_pointer();
+    uint8_t* get_e_pointer();
+    uint8_t* get_a_pointer();
+    uint8_t* get_f_pointer();
+    uint8_t* get_h_pointer();
+    uint8_t* get_l_pointer();
+
+    uint16_t* get_bc_pointer();
+    uint16_t* get_de_pointer();
+    uint16_t* get_af_pointer();
+    uint16_t* get_hl_pointer();
 
     // OpCodes - Following https://rgbds.gbdev.io/docs/v0.9.1/gbz80.7#LD_r8,r8 but with more meaningful (for me, at least) names
     // Load/Store operations
