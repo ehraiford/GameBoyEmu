@@ -78,7 +78,7 @@ static OpCode rotate_value_at_hl_address_left = OpCode(&Cpu::rotate_value_at_hl_
 static OpCode rotate_a_left = OpCode(&Cpu::rotate_a_left, 1, 1); 
 static OpCode rotate_register_left_carry = OpCode(&Cpu::rotate_register_left_carry, 2, 2);
 static OpCode rotate_value_at_hl_address_left_carry = OpCode(&Cpu::rotate_value_at_hl_address_left_carry, 4, 2); 
-static OpCode rotate_a_left_carry = OpCode(&Cpu::rotate_a_left_carry, 1, 1); 
+static OpCode rotate_a_left_with_carry = OpCode(&Cpu::rotate_a_left_with_carry, 1, 1); 
 static OpCode rotate_register_right = OpCode(&Cpu::rotate_register_right, 2, 2); 
 static OpCode rotate_value_at_hl_address_right = OpCode(&Cpu::rotate_value_at_hl_address_right, 4, 2); 
 static OpCode rotate_a_right = OpCode(&Cpu::rotate_a_right, 1, 1);
@@ -124,3 +124,27 @@ static OpCode halt = OpCode(&Cpu::halt, 0, 1);
 static OpCode decimal_adjust_accumulator = OpCode(&Cpu::decimal_adjust_accumulator, 1, 1);
 static OpCode nop = OpCode(&Cpu::nop, 1, 1);
 static OpCode stop = OpCode(&Cpu::stop, 0, 2);
+
+
+struct JumpTableEntry {
+    OpCode* op_code;
+    void* (*get_arguments)(Cpu*, uint16_t*);
+};
+
+constexpr std::array<JumpTableEntry, 512> jump_table = {
+    JumpTableEntry {
+        &nop,
+        [](Cpu* cpu, uint16_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &load_immediate_16bit,
+        [](Cpu* cpu, uint16_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint16_t*, uint16_t*>(cpu->get_bc_pointer(), instr_ptr + 1);
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &store_a_at_register_address,
+        [](Cpu* cpu, uint16_t* instr_ptr) -> void* { return cpu->get_bc_pointer(); }
+    },
+};

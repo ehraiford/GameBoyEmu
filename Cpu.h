@@ -61,6 +61,7 @@ public:
     uint16_t* get_de_pointer();
     uint16_t* get_af_pointer();
     uint16_t* get_hl_pointer();
+    uint16_t* get_sp_pointer();
 
     // OpCodes - Following https://rgbds.gbdev.io/docs/v0.9.1/gbz80.7#LD_r8,r8 but with more meaningful (for me, at least) names
     // Load/Store operations
@@ -135,7 +136,7 @@ public:
     void rotate_a_left(void* args); // RLA
     void rotate_register_left_carry(void* args);// RLC r8
     void rotate_value_at_hl_address_left_carry(void* args); // RLC [HL]
-    void rotate_a_left_carry(void* args); // RLCA
+    void rotate_a_left_with_carry(void* args); // RLCA
     void rotate_register_right(void* args); // RR r8
     void rotate_value_at_hl_address_right(void* args); // RR [HL]
     void rotate_a_right(void* args); // RRA

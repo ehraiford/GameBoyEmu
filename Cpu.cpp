@@ -610,7 +610,7 @@ void Cpu::rotate_value_at_hl_address_left_carry(void* args) {
     this->ram->set_memory(this->get_hl(), value);
 };
 // RLCA
-void Cpu::rotate_a_left_carry(void* args) {
+void Cpu::rotate_a_left_with_carry(void* args) {
     uint8_t a = this->a;
 
     bool new_carry = this->a & 0b10000000;
