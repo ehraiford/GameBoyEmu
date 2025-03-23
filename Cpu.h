@@ -56,6 +56,7 @@ public:
     uint8_t* get_f_pointer();
     uint8_t* get_h_pointer();
     uint8_t* get_l_pointer();
+    uint8_t* get_mem_pointer_from_hl();
 
     uint16_t* get_bc_pointer();
     uint16_t* get_de_pointer();
@@ -134,7 +135,7 @@ public:
     void rotate_register_left(void* args); // RL r8
     void rotate_value_at_hl_address_left(void* args); // RL [HL]
     void rotate_a_left(void* args); // RLA
-    void rotate_register_left_carry(void* args);// RLC r8
+    void rotate_register_left_with_carry(void* args);// RLC r8
     void rotate_value_at_hl_address_left_carry(void* args); // RLC [HL]
     void rotate_a_left_with_carry(void* args); // RLCA
     void rotate_register_right(void* args); // RR r8

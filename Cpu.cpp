@@ -53,7 +53,7 @@ bool Cpu::condition_is_met(Condition condition) {
             return this->get_flag(Flag::Z_FLAG) == true;
         case NC:
             return this->get_flag(Flag::C_FLAG) == false;
-        case C:
+        default:
             return this->get_flag(Flag::C_FLAG) == true;
     };
 }
@@ -95,6 +95,9 @@ uint16_t* Cpu::get_af_pointer() {
 uint16_t* Cpu::get_hl_pointer() {
     return reinterpret_cast<uint16_t*>(&this->h);
 }
+uint8_t* Cpu::get_mem_pointer_from_hl() {
+    return this->ram->get_mem_pointer(this->get_hl());
+};
 
 // OPCODES
 
@@ -579,7 +582,7 @@ void Cpu::rotate_a_left(void* args) {
     this->a = a;
 };
 // RLC r8
-void Cpu::rotate_register_left_carry(void* args) {
+void Cpu::rotate_register_left_with_carry(void* args) {
     uint8_t* reg = reinterpret_cast<uint8_t*>(args);
     uint8_t value = *reg;
     bool new_carry = value & 0b10000000;
@@ -1029,7 +1032,7 @@ void Cpu::decimal_adjust_accumulator(void* args) {
     this->a = result;
 };
 // NOP
-void Cpu::nop(void* args) {};
+void Cpu::nop(void* args) { };
 // STOP
 void Cpu::stop(void* args) {
     //TODO

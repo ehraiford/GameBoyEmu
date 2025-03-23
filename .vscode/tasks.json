@@ -5,7 +5,7 @@
             "label": "Build with Sanitizers",
             "type": "shell",
             "command": "g++",
-            "args":  ["-std=c++23", "-fsanitize=undefined", "-g", "-o", "gameboy_emulator", "main.cpp", "Ram.cpp", "Cpu.cpp"],
+            "args":  ["-std=c++23", "-fsanitize=undefined", "-g", "-o", "gameboy_emulator", "main.cpp", "Ram.cpp", "Cpu.cpp", "Opcodes.cpp"],
             "problemMatcher": []
         },
         {

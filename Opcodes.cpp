@@ -9,7 +9,6 @@ class OpCode {
     uint8_t cycles;
     uint8_t bytes;
 public: 
-    OpCode(OpFunc func, uint8_t cycles) : op_func(func), cycles(cycles) {};
     OpCode(OpFunc func, uint8_t cycles, uint8_t bytes) : op_func(func), cycles(cycles), bytes(bytes) {};
     
     void execute(Cpu* cpu, void* args) {
@@ -71,12 +70,13 @@ static OpCode xor_a_with_immediate = OpCode(&Cpu::xor_a_with_immediate, 2, 2);
 static OpCode set_zflag_if_register_bit_not_set = OpCode(&Cpu::set_zflag_if_register_bit_not_set, 2, 2); 
 static OpCode set_zflag_if_value_at_hl_address_bit_not_set = OpCode(&Cpu::set_zflag_if_value_at_hl_address_bit_not_set, 3, 2); 
 static OpCode clear_register_bit = OpCode(&Cpu::clear_register_bit, 2, 2); 
+static OpCode set_register_bit = OpCode(&Cpu::set_register_bit, 2, 2);
 static OpCode clear_value_at_hl_address_bit = OpCode(&Cpu::clear_value_at_hl_address_bit, 4, 2); 
 static OpCode set_value_at_hl_address_bit = OpCode(&Cpu::set_value_at_hl_address_bit, 4, 2);
 static OpCode rotate_register_left = OpCode(&Cpu::rotate_register_left, 2, 2); 
 static OpCode rotate_value_at_hl_address_left = OpCode(&Cpu::rotate_value_at_hl_address_left, 4, 2); 
 static OpCode rotate_a_left = OpCode(&Cpu::rotate_a_left, 1, 1); 
-static OpCode rotate_register_left_carry = OpCode(&Cpu::rotate_register_left_carry, 2, 2);
+static OpCode rotate_register_left_with_carry = OpCode(&Cpu::rotate_register_left_with_carry, 2, 2);
 static OpCode rotate_value_at_hl_address_left_carry = OpCode(&Cpu::rotate_value_at_hl_address_left_carry, 4, 2); 
 static OpCode rotate_a_left_with_carry = OpCode(&Cpu::rotate_a_left_with_carry, 1, 1); 
 static OpCode rotate_register_right = OpCode(&Cpu::rotate_register_right, 2, 2); 
@@ -128,23 +128,2814 @@ static OpCode stop = OpCode(&Cpu::stop, 0, 2);
 
 struct JumpTableEntry {
     OpCode* op_code;
-    void* (*get_arguments)(Cpu*, uint16_t*);
+    void* (*get_arguments)(Cpu*, uint8_t*);
 };
 
-constexpr std::array<JumpTableEntry, 512> jump_table = {
+std::array<JumpTableEntry, 256> jump_table = {
     JumpTableEntry {
         &nop,
-        [](Cpu* cpu, uint16_t* instr_ptr) -> void* { return nullptr; }
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
     },
     JumpTableEntry {
         &load_immediate_16bit,
-        [](Cpu* cpu, uint16_t* instr_ptr) -> void* {
-            auto* args = new std::pair<uint16_t*, uint16_t*>(cpu->get_bc_pointer(), instr_ptr + 1);
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint16_t*, uint16_t*>(cpu->get_bc_pointer(), reinterpret_cast<uint16_t*>(instr_ptr + 1));
             return static_cast<void*>(args);
         }
     },
     JumpTableEntry {
         &store_a_at_register_address,
-        [](Cpu* cpu, uint16_t* instr_ptr) -> void* { return cpu->get_bc_pointer(); }
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_bc_pointer(); }
+    },
+    JumpTableEntry {
+        &increment_16bit_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_bc_pointer(); }
+    },
+    JumpTableEntry {
+        &increment_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &decrement_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &load_immediate_8bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_a_left_with_carry,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &store_sp_at_immediate_address,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return reinterpret_cast<uint16_t*>(instr_ptr + 1); }
+    },
+    JumpTableEntry {
+        &add_16bit_register_to_HL,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_bc_pointer(); }
+    },
+    JumpTableEntry {
+        &load_a_from_register_address,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_bc_pointer(); }
+    },
+    JumpTableEntry {
+        &decrement_16bit_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_bc_pointer(); }
+    },
+    JumpTableEntry {
+        &increment_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &decrement_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &load_immediate_8bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_a_right_with_carry,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &stop,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &load_immediate_16bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint16_t*, uint16_t*>(cpu->get_de_pointer(), reinterpret_cast<uint16_t*>(instr_ptr + 1));
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &store_a_at_register_address,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_de_pointer(); }
+    },
+    JumpTableEntry {
+        &increment_16bit_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_de_pointer(); }
+    },
+    JumpTableEntry {
+        &increment_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &decrement_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &load_immediate_8bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_a_left,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &jump_relative_to_immediate,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return instr_ptr + 1; }
+    },
+    JumpTableEntry {
+        &add_16bit_register_to_HL,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_de_pointer(); }
+    },
+    JumpTableEntry {
+        &load_a_from_register_address,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_de_pointer(); }
+    },
+    JumpTableEntry {
+        &decrement_16bit_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_de_pointer(); }
+    },
+    JumpTableEntry {
+        &increment_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &decrement_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &load_immediate_8bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_a_right,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &jump_relative_to_immediate_conditionally,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return instr_ptr + 1; }
+    },
+    JumpTableEntry {
+        &load_immediate_16bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint16_t*, uint16_t*>(cpu->get_hl_pointer(), reinterpret_cast<uint16_t*>(instr_ptr + 1));
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &store_a_at_hl_address_increment,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_hl_pointer(); }
+    },
+    JumpTableEntry {
+        &increment_16bit_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_hl_pointer(); }
+    },
+    JumpTableEntry {
+        &increment_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &decrement_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &load_immediate_8bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &decimal_adjust_accumulator,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &jump_relative_to_immediate_conditionally,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return instr_ptr + 1; }
+    },
+    JumpTableEntry {
+        &add_16bit_register_to_HL,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_hl_pointer(); }
+    },
+    JumpTableEntry {
+        &load_a_from_hl_address_increment,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_hl_pointer(); }
+    },
+    JumpTableEntry {
+        &decrement_16bit_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_hl_pointer(); }
+    },
+    JumpTableEntry {
+        &increment_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &decrement_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &load_immediate_8bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &invert_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &jump_relative_to_immediate_conditionally,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return instr_ptr + 1; }
+    },
+    JumpTableEntry {
+        &load_immediate_16bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint16_t*, uint16_t*>(cpu->get_sp_pointer(), reinterpret_cast<uint16_t*>(instr_ptr + 1));
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &store_a_at_hl_address_decrement,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_hl_pointer(); }
+    },
+    JumpTableEntry {
+        &increment_16bit_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_sp_pointer(); }
+    },
+    JumpTableEntry {
+        &increment_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &decrement_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &load_immediate_8bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &set_carry_flag,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &jump_relative_to_immediate_conditionally,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return instr_ptr + 1; }
+    },
+    JumpTableEntry {
+        &add_16bit_register_to_HL,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_sp_pointer(); }
+    },
+    JumpTableEntry {
+        &load_a_from_hl_address_decrement,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_hl_pointer(); }
+    },
+    JumpTableEntry {
+        &decrement_16bit_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_sp_pointer(); }
+    },
+    JumpTableEntry {
+        &increment_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &decrement_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &load_immediate_8bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &invert_carry_flag,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_b_pointer(), cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_b_pointer(), cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_b_pointer(), cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_b_pointer(), cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_b_pointer(), cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_b_pointer(), cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_b_pointer(), cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_b_pointer(), cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_c_pointer(), cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_c_pointer(), cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_c_pointer(), cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_c_pointer(), cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_c_pointer(), cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_c_pointer(), cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_c_pointer(), cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_c_pointer(), cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_d_pointer(), cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_d_pointer(), cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_d_pointer(), cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_d_pointer(), cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_d_pointer(), cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_d_pointer(), cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_d_pointer(), cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_d_pointer(), cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_e_pointer(), cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_e_pointer(), cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_e_pointer(), cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_e_pointer(), cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_e_pointer(), cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_e_pointer(), cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_e_pointer(), cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_e_pointer(), cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_h_pointer(), cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_h_pointer(), cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_h_pointer(), cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_h_pointer(), cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_h_pointer(), cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_h_pointer(), cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_h_pointer(), cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_h_pointer(), cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_l_pointer(), cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_l_pointer(), cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_l_pointer(), cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_l_pointer(), cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_l_pointer(), cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_l_pointer(), cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_l_pointer(), cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_l_pointer(), cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_mem_pointer_from_hl(), cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_mem_pointer_from_hl(), cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_mem_pointer_from_hl(), cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_mem_pointer_from_hl(), cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_mem_pointer_from_hl(), cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_mem_pointer_from_hl(), cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &halt,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_mem_pointer_from_hl(), cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_a_pointer(), cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_a_pointer(), cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_a_pointer(), cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_a_pointer(), cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_a_pointer(), cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_a_pointer(), cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_a_pointer(), cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &copy,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t*, uint8_t*>(cpu->get_a_pointer(), cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &add_register_to_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &add_register_to_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &add_register_to_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &add_register_to_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &add_register_to_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &add_register_to_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &add_register_to_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &add_register_to_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &add_with_carry_register_to_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &add_with_carry_register_to_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &add_with_carry_register_to_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &add_with_carry_register_to_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &add_with_carry_register_to_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &add_with_carry_register_to_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &add_with_carry_register_to_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &add_with_carry_register_to_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &subtract_register_from_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &subtract_register_from_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &subtract_register_from_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &subtract_register_from_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &subtract_register_from_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &subtract_register_from_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &subtract_register_from_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &subtract_register_from_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &subtract_with_carry_register_from_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &subtract_with_carry_register_from_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &subtract_with_carry_register_from_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &subtract_with_carry_register_from_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &subtract_with_carry_register_from_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &subtract_with_carry_register_from_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &subtract_with_carry_register_from_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &subtract_with_carry_register_from_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &and_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &and_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &and_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &and_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &and_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &and_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &and_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &and_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &xor_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &xor_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &xor_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &xor_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &xor_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &xor_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &xor_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &xor_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &or_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &or_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &or_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &or_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &or_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &or_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &or_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &or_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &compare_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &compare_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &compare_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &compare_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &compare_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &compare_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &compare_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &compare_a_with_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &return_from_subroutine_conditionally,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return reinterpret_cast<void*>(Condition::NZ); }
+    },
+    JumpTableEntry {
+        &pop_stack_to_16bit_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_bc_pointer(); }
+    },
+    JumpTableEntry {
+        &jump_to_immediate_conditionally,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<Condition, uint16_t*>(Condition::NZ, reinterpret_cast<uint16_t*>(instr_ptr + 1));
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &jump_to_immediate,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return reinterpret_cast<uint16_t*>(instr_ptr + 1); }
+    },
+    JumpTableEntry {
+        &call_conditionally,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<Condition, uint16_t*>(Condition::NZ, reinterpret_cast<uint16_t*>(instr_ptr + 1));
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &push_16bit_register_to_stack,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_bc_pointer(); }
+    },
+    JumpTableEntry {
+        &add_immediate_to_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return instr_ptr + 1; }
+    },
+    JumpTableEntry {
+        &call_vec,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return reinterpret_cast<void*>(0); }
+    },
+    JumpTableEntry {
+        &return_from_subroutine_conditionally,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return reinterpret_cast<void*>(Condition::Z); }
+    },
+    JumpTableEntry {
+        &return_from_subroutine,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &jump_to_immediate_conditionally,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<Condition, uint16_t*>(Condition::Z, reinterpret_cast<uint16_t*>(instr_ptr + 1));
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &nop,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &call_conditionally,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<Condition, uint16_t*>(Condition::Z, reinterpret_cast<uint16_t*>(instr_ptr + 1));
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &call,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return reinterpret_cast<uint16_t*>(instr_ptr + 1); }
+    },
+    JumpTableEntry {
+        &add_with_carry_immediate_to_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return instr_ptr + 1; }
+    },
+    JumpTableEntry {
+        &call_vec,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return reinterpret_cast<void*>(1); }
+    },
+    JumpTableEntry {
+        &return_from_subroutine_conditionally,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return reinterpret_cast<void*>(Condition::NC); }
+    },
+    JumpTableEntry {
+        &pop_stack_to_16bit_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_de_pointer(); }
+    },
+    JumpTableEntry {
+        &jump_to_immediate_conditionally,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<Condition, uint16_t*>(Condition::NC, reinterpret_cast<uint16_t*>(instr_ptr + 1));
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &call_conditionally,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<Condition, uint16_t*>(Condition::NC, reinterpret_cast<uint16_t*>(instr_ptr + 1));
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &push_16bit_register_to_stack,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_de_pointer(); }
+    },
+    JumpTableEntry {
+        &subtract_immediate_from_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return instr_ptr + 1; }
+    },
+    JumpTableEntry {
+        &call_vec,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return reinterpret_cast<void*>(2); }
+    },
+    JumpTableEntry {
+        &return_from_subroutine_conditionally,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return reinterpret_cast<void*>(Condition::C); }
+    },
+    JumpTableEntry {
+        &return_from_interrupt_subroutine,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &jump_to_immediate_conditionally,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<Condition, uint16_t*>(Condition::C, reinterpret_cast<uint16_t*>(instr_ptr + 1));
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &call_conditionally,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<Condition, uint16_t*>(Condition::C, reinterpret_cast<uint16_t*>(instr_ptr + 1));
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &subtract_with_carry_immediate_from_a,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return instr_ptr + 1; }
+    },
+    JumpTableEntry {
+        &call_vec,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return reinterpret_cast<void*>(3); }
+    },
+    JumpTableEntry {
+        &store_a_at_immediate_hardware_address,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return instr_ptr + 1; }
+    },
+    JumpTableEntry {
+        &pop_stack_to_16bit_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_hl_pointer(); }
+    },
+    JumpTableEntry {
+        &store_a_at_hardware_address_offset_by_c,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &push_16bit_register_to_stack,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_hl_pointer(); }
+    },
+    JumpTableEntry {
+        &and_a_with_immediate,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return instr_ptr + 1; }
+    },
+    JumpTableEntry {
+        &call_vec,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return reinterpret_cast<void*>(4); }
+    },
+    JumpTableEntry {
+        &add_signed_immediate_to_sp,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return instr_ptr + 1; }
+    },
+    JumpTableEntry {
+        &jump_to_value_at_hl_address,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &store_a_at_immediate_address,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return reinterpret_cast<uint16_t*>(instr_ptr + 1); }
+    },
+    JumpTableEntry {
+        &xor_a_with_immediate,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return instr_ptr + 1; }
+    },
+    JumpTableEntry {
+        &call_vec,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return reinterpret_cast<void*>(5); }
+    },
+    JumpTableEntry {
+        &load_a_from_immediate_hardware_address,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return instr_ptr + 1; }
+    },
+    JumpTableEntry {
+        &pop_stack_to_16bit_register,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_af_pointer(); }
+    },
+    JumpTableEntry {
+        &load_a_from_hardware_address_offset_by_c,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &disable_interrupts,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &push_16bit_register_to_stack,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_af_pointer(); }
+    },
+    JumpTableEntry {
+        &or_a_with_immediate,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return instr_ptr + 1; }
+    },
+    JumpTableEntry {
+        &call_vec,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return reinterpret_cast<void*>(6); }
+    },
+    JumpTableEntry {
+        &load_hl_from_sp_plus_signed_immediate,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return instr_ptr + 1; }
+    },
+    JumpTableEntry {
+        &copy_hl_to_sp,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &load_a_from_immediate_hardware_address,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &enable_interrupts,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return nullptr; }
+    },
+    JumpTableEntry {
+        &compare_a_with_immediate,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return instr_ptr + 1; }
+    },
+    JumpTableEntry {
+        &call_vec,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return reinterpret_cast<void*>(7); }
+    },
+};std::array<JumpTableEntry, 256> jump_table_cb = {
+    JumpTableEntry {
+        &rotate_register_left_with_carry,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_left_with_carry,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_left_with_carry,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_left_with_carry,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_left_with_carry,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_left_with_carry,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_left_with_carry,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &rotate_register_left_with_carry,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_right_with_carry,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_right_with_carry,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_right_with_carry,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_right_with_carry,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_right_with_carry,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_right_with_carry,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_right_with_carry,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &rotate_register_right_with_carry,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_left,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_left,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_left,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_left,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_left,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_left,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_left,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &rotate_register_left,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_right,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_right,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_right,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_right,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_right,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_right,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &rotate_register_right,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &rotate_register_right,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_left_arithmetically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_left_arithmetically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_left_arithmetically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_left_arithmetically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_left_arithmetically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_left_arithmetically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_left_arithmetically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &shift_register_left_arithmetically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_right_arithmetically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_right_arithmetically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_right_arithmetically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_right_arithmetically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_right_arithmetically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_right_arithmetically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_right_arithmetically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &shift_register_right_arithmetically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &swap_register_nibbles,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &swap_register_nibbles,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &swap_register_nibbles,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &swap_register_nibbles,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &swap_register_nibbles,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &swap_register_nibbles,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &swap_register_nibbles,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &swap_register_nibbles,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_right_logically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_b_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_right_logically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_c_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_right_logically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_d_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_right_logically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_e_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_right_logically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_h_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_right_logically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_l_pointer(); }
+    },
+    JumpTableEntry {
+        &shift_register_right_logically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_mem_pointer_from_hl(); }
+    },
+    JumpTableEntry {
+        &shift_register_right_logically,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* { return cpu->get_a_pointer(); }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_zflag_if_register_bit_not_set,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &clear_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(0, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(1, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(2, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(3, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(4, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(5, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(6, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_b_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_c_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_d_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_e_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_h_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_l_pointer());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_mem_pointer_from_hl());
+            return static_cast<void*>(args);
+        }
+    },
+    JumpTableEntry {
+        &set_register_bit,
+        [](Cpu* cpu, uint8_t* instr_ptr) -> void* {
+            auto* args = new std::pair<uint8_t, uint8_t*>(7, cpu->get_a_pointer());
+            return static_cast<void*>(args);
+        }
     },
 };
