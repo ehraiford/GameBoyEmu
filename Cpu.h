@@ -9,7 +9,7 @@ enum Flag {
     H_FLAG = 32, // Half Carry 
     C_FLAG = 16, // Carry
 };
-enum Condition {
+enum Condition: std::uint8_t {
     NZ = 0,
     Z = 1,
     NC = 2,
@@ -163,7 +163,7 @@ public:
     void return_from_subroutine_conditionally(void* args); // RET cc
     void return_from_subroutine(void* args); // RET
     void return_from_interrupt_subroutine(void* args); // RETI
-    void call_address(void* args); // RST vec
+    void call_vec(void* args); // RST vec
 
     // Carry Flag Instructions
     void invert_carry_flag(void* args); // CCF

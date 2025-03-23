@@ -833,10 +833,11 @@ void Cpu::call(void* args) {
 };
 // CALL cc,n16
 void Cpu::call_conditionally(void* args) {
-    Condition condition = *reinterpret_cast<Condition*>(args);
+    uint8_t cond_int = static_cast<std::uint8_t>(reinterpret_cast<std::uintptr_t>(args));
+    Condition condition = static_cast<Condition>(cond_int);
 
     if (this->condition_is_met(condition)) {
-        this->call(reinterpret_cast<int16_t*>(args) + sizeof(Condition*));
+        this->call(reinterpret_cast<int16_t*>(args) + sizeof(Condition));
     }
 };
 // JP HL
@@ -850,10 +851,11 @@ void Cpu::jump_to_immediate(void* args) {
 };
 // JP cc,n16
 void Cpu::jump_to_immediate_conditionally(void* args) {
-    Condition condition = *reinterpret_cast<Condition*>(args);
+    uint8_t cond_int = static_cast<std::uint8_t>(reinterpret_cast<std::uintptr_t>(args));
+    Condition condition = static_cast<Condition>(cond_int);
 
     if (this->condition_is_met(condition)) {
-        this->jump_to_immediate(reinterpret_cast<int16_t*>(args) + sizeof(Condition*));
+        this->jump_to_immediate(reinterpret_cast<int16_t*>(args) + sizeof(Condition));
     }
 };
 // JR n16
@@ -863,10 +865,11 @@ void Cpu::jump_relative_to_immediate(void* args) {
 };
 // JR cc,n16
 void Cpu::jump_relative_to_immediate_conditionally(void* args) {
-    Condition condition = *reinterpret_cast<Condition*>(args);
+    uint8_t cond_int = static_cast<std::uint8_t>(reinterpret_cast<std::uintptr_t>(args));
+    Condition condition = static_cast<Condition>(cond_int);
 
     if (this->condition_is_met(condition)) {
-        this->jump_relative_to_immediate(reinterpret_cast<int8_t*>(args) + sizeof(Condition*));
+        this->jump_relative_to_immediate(reinterpret_cast<int8_t*>(args) + sizeof(Condition));
     }
 };
 // RET
@@ -875,7 +878,8 @@ void Cpu::return_from_subroutine(void* args) {
 };
 // RET cc
 void Cpu::return_from_subroutine_conditionally(void* args) {
-    Condition condition = *reinterpret_cast<Condition*>(args);
+    uint8_t cond_int = static_cast<std::uint8_t>(reinterpret_cast<std::uintptr_t>(args));
+    Condition condition = static_cast<Condition>(cond_int);
 
     if (this->condition_is_met(condition)) {
         this->return_from_subroutine(nullptr);
@@ -887,8 +891,8 @@ void Cpu::return_from_interrupt_subroutine(void* args) {
     this->return_from_subroutine(args);
 };
 // RST vec
-void Cpu::call_address(void* args) {
-    uint16_t address = *reinterpret_cast<uint8_t*>(args);
+void Cpu::call_vec(void* args) {
+    uint16_t address = reinterpret_cast<uint8_t>(args);
     uint16_t pc = this->pc;
 
     this->push_to_stack(pc);
