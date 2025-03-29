@@ -113,10 +113,6 @@ uint16_t *Cpu::get_sp_pointer()
 {
     return &this->sp;
 }
-uint8_t *Cpu::get_mem_pointer_from_hl()
-{
-    return this->ram->get_mem_pointer(this->get_hl());
-};
 
 // OPCODES
 

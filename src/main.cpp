@@ -1,6 +1,7 @@
 #include <iostream>
 #include <iostream>
 #include <thread>
+#include <vector>
 #include "Cpu.h"
 #include "Ram.h"
 #include "Opcodes.h"
