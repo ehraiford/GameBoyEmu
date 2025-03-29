@@ -61,5 +61,6 @@
         "Werror",
         "Wextra",
         "Wpedantic"
-    ]
+    ],
+    "cmake.sourceDirectory": "/Users/evanraiford/EmulatorCpp"
 }

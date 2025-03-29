@@ -36,6 +36,13 @@
             "type": "shell",
             "command": "infer run -- clang++ -c ${file}",
             "problemMatcher": []
+        },
+        {
+            "label": "Build and Run (Including Rust)",
+            "type": "shell",
+            "command": "bash build_and_run.sh",
+            "problemMatcher": [],
+            "group": "build",
         }
     ]
 }

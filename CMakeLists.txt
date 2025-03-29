@@ -1,47 +1,26 @@
 cmake_minimum_required(VERSION 3.16)
-project(MyProject CXX)
+project(GameBoyEmu)
 
-# Set C++ standard
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Enable Clang-Tidy if available
-find_program(CLANG_TIDY_EXE NAMES clang-tidy)
-if(CLANG_TIDY_EXE)
-    message(STATUS "Using Clang-Tidy: ${CLANG_TIDY_EXE}")
-    set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE};-checks=*")
-endif()
+cmake_policy(SET CMP0156 NEW)
 
-# Enable Cppcheck if available
-find_program(CPPCHECK_EXE NAMES cppcheck)
-if(CPPCHECK_EXE)
-    message(STATUS "Using Cppcheck: ${CPPCHECK_EXE}")
-    set(CMAKE_CXX_CPPCHECK "${CPPCHECK_EXE};--enable=all;--inconclusive;--quiet")
-endif()
+add_executable(GameBoyEmu 
+  ../src/main.cpp 
+  ../src/Opcodes.cpp ../src/Opcodes.h 
+  ../src/Cpu.cpp ../src/Cpu.h 
+  ../src/Ram.cpp ../src/Ram.h 
+)
 
-# Enable AddressSanitizer, UndefinedBehaviorSanitizer, ThreadSanitizer
-option(ENABLE_SANITIZERS "Enable Address, Undefined, and Thread Sanitizers" ON)
+target_include_directories(GameBoyEmu PRIVATE src)
 
-if(ENABLE_SANITIZERS)
-    message(STATUS "Sanitizers Enabled")
-    set(SANITIZER_FLAGS "-fsanitize=address,undefined,thread -fno-omit-frame-pointer")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZER_FLAGS}")
-endif()
+# Add the Rust cdylib
+add_library(rust_lib SHARED IMPORTED)
+set_target_properties(rust_lib PROPERTIES
+    IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/../gui/fast_emu_gui/target/release/libfast_emu_gui.so" 
+)
 
-# Enable MemorySanitizer (only with Clang)
-option(ENABLE_MEMORY_SANITIZER "Enable MemorySanitizer" OFF)
-if(ENABLE_MEMORY_SANITIZER AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    message(STATUS "MemorySanitizer Enabled")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=memory")
-endif()
-
-# Create executable
-add_executable(MyExecutable main.cpp)
-
-# Link with sanitizers
-if(ENABLE_SANITIZERS)
-    target_link_libraries(MyExecutable PRIVATE -fsanitize=address -fsanitize=undefined -fsanitize=thread)
-endif()
-
-# Enable warnings and treat warnings as errors (optional)
-add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+# Link the Rust library to the main executable
+target_link_libraries(GameBoyEmu PRIVATE rust_lib)
