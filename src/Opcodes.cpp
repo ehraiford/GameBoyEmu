@@ -74,7 +74,7 @@ static OpCode rotate_register_left = OpCode(&Cpu::rotate_register_left, 2, 2);
 static OpCode rotate_value_at_hl_address_left = OpCode(&Cpu::rotate_value_at_hl_address_left, 4, 2);
 static OpCode rotate_a_left = OpCode(&Cpu::rotate_a_left, 1, 1);
 static OpCode rotate_register_left_with_carry = OpCode(&Cpu::rotate_register_left_with_carry, 2, 2);
-static OpCode rotate_value_at_hl_address_left_carry = OpCode(&Cpu::rotate_value_at_hl_address_left_carry, 4, 2);
+static OpCode rotate_value_at_hl_address_left_with_carry = OpCode(&Cpu::rotate_value_at_hl_address_left_with_carry, 4, 2);
 static OpCode rotate_a_left_with_carry = OpCode(&Cpu::rotate_a_left_with_carry, 1, 1);
 static OpCode rotate_register_right = OpCode(&Cpu::rotate_register_right, 2, 2);
 static OpCode rotate_value_at_hl_address_right = OpCode(&Cpu::rotate_value_at_hl_address_right, 4, 2);
@@ -121,6 +121,7 @@ static OpCode halt = OpCode(&Cpu::halt, 0, 1);
 static OpCode decimal_adjust_accumulator = OpCode(&Cpu::decimal_adjust_accumulator, 1, 1);
 static OpCode nop = OpCode(&Cpu::nop, 1, 1);
 static OpCode stop = OpCode(&Cpu::stop, 0, 2);
+static OpCode unsupported_op = OpCode(&Cpu::unsupported_op, 0, 1);
 
 std::array<JumpTableEntry, 256> jump_table = {
     JumpTableEntry{
@@ -260,7 +261,10 @@ std::array<JumpTableEntry, 256> jump_table = {
     JumpTableEntry{
         &jump_relative_to_immediate_conditionally,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return instr_ptr + 1; }},
+        {
+            auto *args = new std::pair<Condition, uint8_t *>(Condition::NZ, instr_ptr + 1);
+            return static_cast<void *>(args);
+        }},
     JumpTableEntry{
         &load_immediate_16bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -295,7 +299,10 @@ std::array<JumpTableEntry, 256> jump_table = {
     JumpTableEntry{
         &jump_relative_to_immediate_conditionally,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return instr_ptr + 1; }},
+        {
+            auto *args = new std::pair<Condition, uint8_t *>(Condition::Z, instr_ptr + 1);
+            return static_cast<void *>(args);
+        }},
     JumpTableEntry{
         &add_16bit_register_to_HL,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -327,7 +334,10 @@ std::array<JumpTableEntry, 256> jump_table = {
     JumpTableEntry{
         &jump_relative_to_immediate_conditionally,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return instr_ptr + 1; }},
+        {
+            auto *args = new std::pair<Condition, uint8_t *>(Condition::NC, instr_ptr + 1);
+            return static_cast<void *>(args);
+        }},
     JumpTableEntry{
         &load_immediate_16bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -344,17 +354,17 @@ std::array<JumpTableEntry, 256> jump_table = {
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return cpu->get_sp_pointer(); }},
     JumpTableEntry{
-        &increment_register,
+        &increment_value_at_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return nullptr; }},
     JumpTableEntry{
-        &decrement_register,
+        &decrement_value_at_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return nullptr; }},
     JumpTableEntry{
-        &load_immediate_8bit,
+        &store_immediate_at_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return instr_ptr + 1; }},
     JumpTableEntry{
         &set_carry_flag,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -362,7 +372,10 @@ std::array<JumpTableEntry, 256> jump_table = {
     JumpTableEntry{
         &jump_relative_to_immediate_conditionally,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return instr_ptr + 1; }},
+        {
+            auto *args = new std::pair<Condition, uint8_t *>(Condition::C, instr_ptr + 1);
+            return static_cast<void *>(args);
+        }},
     JumpTableEntry{
         &add_16bit_register_to_HL,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -434,12 +447,9 @@ std::array<JumpTableEntry, 256> jump_table = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &copy,
+        &load_from_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_b_pointer(), cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return cpu->get_b_pointer(); }},
     JumpTableEntry{
         &copy,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -490,12 +500,9 @@ std::array<JumpTableEntry, 256> jump_table = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &copy,
+        &load_from_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_c_pointer(), cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return cpu->get_c_pointer(); }},
     JumpTableEntry{
         &copy,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -546,12 +553,9 @@ std::array<JumpTableEntry, 256> jump_table = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &copy,
+        &load_from_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_d_pointer(), cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return cpu->get_d_pointer(); }},
     JumpTableEntry{
         &copy,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -602,12 +606,9 @@ std::array<JumpTableEntry, 256> jump_table = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &copy,
+        &load_from_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_e_pointer(), cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return cpu->get_e_pointer(); }},
     JumpTableEntry{
         &copy,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -658,12 +659,9 @@ std::array<JumpTableEntry, 256> jump_table = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &copy,
+        &load_from_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_h_pointer(), cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return cpu->get_h_pointer(); }},
     JumpTableEntry{
         &copy,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -714,12 +712,9 @@ std::array<JumpTableEntry, 256> jump_table = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &copy,
+        &load_from_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_l_pointer(), cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return cpu->get_l_pointer(); }},
     JumpTableEntry{
         &copy,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -728,58 +723,37 @@ std::array<JumpTableEntry, 256> jump_table = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &copy,
+        &store_at_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_mem_pointer_from_hl(), cpu->get_b_pointer());
-            return static_cast<void *>(args);
-        }},
+        { return cpu->get_b_pointer(); }},
     JumpTableEntry{
-        &copy,
+        &store_at_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_mem_pointer_from_hl(), cpu->get_c_pointer());
-            return static_cast<void *>(args);
-        }},
+        { return cpu->get_c_pointer(); }},
     JumpTableEntry{
-        &copy,
+        &store_at_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_mem_pointer_from_hl(), cpu->get_d_pointer());
-            return static_cast<void *>(args);
-        }},
+        { return cpu->get_d_pointer(); }},
     JumpTableEntry{
-        &copy,
+        &store_at_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_mem_pointer_from_hl(), cpu->get_e_pointer());
-            return static_cast<void *>(args);
-        }},
+        { return cpu->get_e_pointer(); }},
     JumpTableEntry{
-        &copy,
+        &store_at_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_mem_pointer_from_hl(), cpu->get_h_pointer());
-            return static_cast<void *>(args);
-        }},
+        { return cpu->get_h_pointer(); }},
     JumpTableEntry{
-        &copy,
+        &store_at_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_mem_pointer_from_hl(), cpu->get_l_pointer());
-            return static_cast<void *>(args);
-        }},
+        { return cpu->get_l_pointer(); }},
     JumpTableEntry{
         &halt,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return nullptr; }},
     JumpTableEntry{
-        &copy,
+        &store_at_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_mem_pointer_from_hl(), cpu->get_a_pointer());
-            return static_cast<void *>(args);
-        }},
+        { return cpu->get_a_pointer(); }},
     JumpTableEntry{
         &copy,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -823,12 +797,9 @@ std::array<JumpTableEntry, 256> jump_table = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &copy,
+        &load_from_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_a_pointer(), cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return cpu->get_a_pointer(); }},
     JumpTableEntry{
         &copy,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -861,9 +832,9 @@ std::array<JumpTableEntry, 256> jump_table = {
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return cpu->get_l_pointer(); }},
     JumpTableEntry{
-        &add_register_to_a,
+        &add_value_at_hl_address_to_a,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return nullptr; }},
     JumpTableEntry{
         &add_register_to_a,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -893,9 +864,9 @@ std::array<JumpTableEntry, 256> jump_table = {
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return cpu->get_l_pointer(); }},
     JumpTableEntry{
-        &add_with_carry_register_to_a,
+        &add_with_carry_from_hl_address_to_a,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return nullptr; }},
     JumpTableEntry{
         &add_with_carry_register_to_a,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -925,9 +896,9 @@ std::array<JumpTableEntry, 256> jump_table = {
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return cpu->get_l_pointer(); }},
     JumpTableEntry{
-        &subtract_register_from_a,
+        &subtract_value_at_hl_address_from_a,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return nullptr; }},
     JumpTableEntry{
         &subtract_register_from_a,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -957,9 +928,9 @@ std::array<JumpTableEntry, 256> jump_table = {
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return cpu->get_l_pointer(); }},
     JumpTableEntry{
-        &subtract_with_carry_register_from_a,
+        &subtract_with_carry_value_at_hl_address_from_a,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return nullptr; }},
     JumpTableEntry{
         &subtract_with_carry_register_from_a,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -989,9 +960,9 @@ std::array<JumpTableEntry, 256> jump_table = {
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return cpu->get_l_pointer(); }},
     JumpTableEntry{
-        &and_a_with_register,
+        &and_a_with_value_at_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return nullptr; }},
     JumpTableEntry{
         &and_a_with_register,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1021,9 +992,9 @@ std::array<JumpTableEntry, 256> jump_table = {
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return cpu->get_l_pointer(); }},
     JumpTableEntry{
-        &xor_a_with_register,
+        &xor_a_with_value_at_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return nullptr; }},
     JumpTableEntry{
         &xor_a_with_register,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1053,9 +1024,9 @@ std::array<JumpTableEntry, 256> jump_table = {
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return cpu->get_l_pointer(); }},
     JumpTableEntry{
-        &or_a_with_register,
+        &or_a_with_value_at_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return nullptr; }},
     JumpTableEntry{
         &or_a_with_register,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1085,9 +1056,9 @@ std::array<JumpTableEntry, 256> jump_table = {
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return cpu->get_l_pointer(); }},
     JumpTableEntry{
-        &compare_a_with_register,
+        &compare_a_with_value_at_hl_address,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return nullptr; }},
     JumpTableEntry{
         &compare_a_with_register,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1184,6 +1155,10 @@ std::array<JumpTableEntry, 256> jump_table = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
+        &unsupported_op,
+        [](Cpu *cpu, uint8_t *instr_ptr) -> void *
+        { return nullptr; }},
+    JumpTableEntry{
         &call_conditionally,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         {
@@ -1218,12 +1193,20 @@ std::array<JumpTableEntry, 256> jump_table = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
+        &unsupported_op,
+        [](Cpu *cpu, uint8_t *instr_ptr) -> void *
+        { return nullptr; }},
+    JumpTableEntry{
         &call_conditionally,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         {
             auto *args = new std::pair<Condition, uint16_t *>(Condition::C, reinterpret_cast<uint16_t *>(instr_ptr + 1));
             return static_cast<void *>(args);
         }},
+    JumpTableEntry{
+        &unsupported_op,
+        [](Cpu *cpu, uint8_t *instr_ptr) -> void *
+        { return nullptr; }},
     JumpTableEntry{
         &subtract_with_carry_immediate_from_a,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1242,6 +1225,14 @@ std::array<JumpTableEntry, 256> jump_table = {
         { return cpu->get_hl_pointer(); }},
     JumpTableEntry{
         &store_a_at_hardware_address_offset_by_c,
+        [](Cpu *cpu, uint8_t *instr_ptr) -> void *
+        { return nullptr; }},
+    JumpTableEntry{
+        &unsupported_op,
+        [](Cpu *cpu, uint8_t *instr_ptr) -> void *
+        { return nullptr; }},
+    JumpTableEntry{
+        &unsupported_op,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return nullptr; }},
     JumpTableEntry{
@@ -1269,6 +1260,18 @@ std::array<JumpTableEntry, 256> jump_table = {
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return reinterpret_cast<uint16_t *>(instr_ptr + 1); }},
     JumpTableEntry{
+        &unsupported_op,
+        [](Cpu *cpu, uint8_t *instr_ptr) -> void *
+        { return nullptr; }},
+    JumpTableEntry{
+        &unsupported_op,
+        [](Cpu *cpu, uint8_t *instr_ptr) -> void *
+        { return nullptr; }},
+    JumpTableEntry{
+        &unsupported_op,
+        [](Cpu *cpu, uint8_t *instr_ptr) -> void *
+        { return nullptr; }},
+    JumpTableEntry{
         &xor_a_with_immediate,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return instr_ptr + 1; }},
@@ -1290,6 +1293,10 @@ std::array<JumpTableEntry, 256> jump_table = {
         { return nullptr; }},
     JumpTableEntry{
         &disable_interrupts,
+        [](Cpu *cpu, uint8_t *instr_ptr) -> void *
+        { return nullptr; }},
+    JumpTableEntry{
+        &unsupported_op,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return nullptr; }},
     JumpTableEntry{
@@ -1318,6 +1325,14 @@ std::array<JumpTableEntry, 256> jump_table = {
         { return nullptr; }},
     JumpTableEntry{
         &enable_interrupts,
+        [](Cpu *cpu, uint8_t *instr_ptr) -> void *
+        { return nullptr; }},
+    JumpTableEntry{
+        &unsupported_op,
+        [](Cpu *cpu, uint8_t *instr_ptr) -> void *
+        { return nullptr; }},
+    JumpTableEntry{
+        &unsupported_op,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return nullptr; }},
     JumpTableEntry{
@@ -1355,9 +1370,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return cpu->get_l_pointer(); }},
     JumpTableEntry{
-        &rotate_register_left_with_carry,
+        &rotate_value_at_hl_address_left_with_carry,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return nullptr; }},
     JumpTableEntry{
         &rotate_register_left_with_carry,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1387,9 +1402,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return cpu->get_l_pointer(); }},
     JumpTableEntry{
-        &rotate_register_right_with_carry,
+        &rotate_value_at_hl_address_right_with_carry,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return nullptr; }},
     JumpTableEntry{
         &rotate_register_right_with_carry,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1419,9 +1434,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return cpu->get_l_pointer(); }},
     JumpTableEntry{
-        &rotate_register_left,
+        &rotate_value_at_hl_address_left,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return nullptr; }},
     JumpTableEntry{
         &rotate_register_left,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1451,9 +1466,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return cpu->get_l_pointer(); }},
     JumpTableEntry{
-        &rotate_register_right,
+        &rotate_value_at_hl_address_left,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return nullptr; }},
     JumpTableEntry{
         &rotate_register_right,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1483,9 +1498,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return cpu->get_l_pointer(); }},
     JumpTableEntry{
-        &shift_register_left_arithmetically,
+        &shift_value_at_hl_address_left_arithmetically,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return nullptr; }},
     JumpTableEntry{
         &shift_register_left_arithmetically,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1515,9 +1530,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return cpu->get_l_pointer(); }},
     JumpTableEntry{
-        &shift_register_right_arithmetically,
+        &shift_value_at_hl_address_right_arithmetically,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return nullptr; }},
     JumpTableEntry{
         &shift_register_right_arithmetically,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1549,7 +1564,7 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
     JumpTableEntry{
         &swap_register_nibbles,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return nullptr; }},
     JumpTableEntry{
         &swap_register_nibbles,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1579,9 +1594,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
         { return cpu->get_l_pointer(); }},
     JumpTableEntry{
-        &shift_register_right_logically,
+        &shift_value_at_hl_address_right_logically,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        { return cpu->get_mem_pointer_from_hl(); }},
+        { return nullptr; }},
     JumpTableEntry{
         &shift_register_right_logically,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1629,12 +1644,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &set_zflag_if_register_bit_not_set,
+        &set_zflag_if_value_at_hl_address_bit_not_set,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(0, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(0); }},
     JumpTableEntry{
         &set_zflag_if_register_bit_not_set,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1685,12 +1697,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &set_zflag_if_register_bit_not_set,
+        &set_zflag_if_value_at_hl_address_bit_not_set,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(1, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(1); }},
     JumpTableEntry{
         &set_zflag_if_register_bit_not_set,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1741,12 +1750,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &set_zflag_if_register_bit_not_set,
+        &set_zflag_if_value_at_hl_address_bit_not_set,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(2, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(2); }},
     JumpTableEntry{
         &set_zflag_if_register_bit_not_set,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1797,12 +1803,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &set_zflag_if_register_bit_not_set,
+        &set_zflag_if_value_at_hl_address_bit_not_set,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(3, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(3); }},
     JumpTableEntry{
         &set_zflag_if_register_bit_not_set,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1853,12 +1856,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &set_zflag_if_register_bit_not_set,
+        &set_zflag_if_value_at_hl_address_bit_not_set,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(4, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(4); }},
     JumpTableEntry{
         &set_zflag_if_register_bit_not_set,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1909,12 +1909,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &set_zflag_if_register_bit_not_set,
+        &set_zflag_if_value_at_hl_address_bit_not_set,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(5, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(5); }},
     JumpTableEntry{
         &set_zflag_if_register_bit_not_set,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -1965,12 +1962,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &set_zflag_if_register_bit_not_set,
+        &set_zflag_if_value_at_hl_address_bit_not_set,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(6, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(6); }},
     JumpTableEntry{
         &set_zflag_if_register_bit_not_set,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -2021,12 +2015,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &set_zflag_if_register_bit_not_set,
+        &set_zflag_if_value_at_hl_address_bit_not_set,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(7, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(7); }},
     JumpTableEntry{
         &set_zflag_if_register_bit_not_set,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -2077,12 +2068,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &clear_register_bit,
+        &clear_value_at_hl_address_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(0, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(0); }},
     JumpTableEntry{
         &clear_register_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -2133,12 +2121,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &clear_register_bit,
+        &clear_value_at_hl_address_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(1, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(1); }},
     JumpTableEntry{
         &clear_register_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -2189,12 +2174,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &clear_register_bit,
+        &clear_value_at_hl_address_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(2, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(2); }},
     JumpTableEntry{
         &clear_register_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -2245,12 +2227,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &clear_register_bit,
+        &clear_value_at_hl_address_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(3, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(3); }},
     JumpTableEntry{
         &clear_register_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -2301,12 +2280,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &clear_register_bit,
+        &clear_value_at_hl_address_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(4, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(4); }},
     JumpTableEntry{
         &clear_register_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -2357,12 +2333,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &clear_register_bit,
+        &clear_value_at_hl_address_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(5, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(5); }},
     JumpTableEntry{
         &clear_register_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -2413,12 +2386,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &clear_register_bit,
+        &clear_value_at_hl_address_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(6, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(6); }},
     JumpTableEntry{
         &clear_register_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -2469,12 +2439,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &clear_register_bit,
+        &clear_value_at_hl_address_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(7, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(7); }},
     JumpTableEntry{
         &clear_register_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -2525,12 +2492,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &set_register_bit,
+        &set_value_at_hl_address_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(0, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(0); }},
     JumpTableEntry{
         &set_register_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -2581,12 +2545,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &set_register_bit,
+        &set_value_at_hl_address_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(1, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(1); }},
     JumpTableEntry{
         &set_register_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -2637,12 +2598,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &set_register_bit,
+        &set_value_at_hl_address_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(2, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(2); }},
     JumpTableEntry{
         &set_register_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -2693,12 +2651,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &set_register_bit,
+        &set_value_at_hl_address_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(3, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(3); }},
     JumpTableEntry{
         &set_register_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -2749,12 +2704,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &set_register_bit,
+        &set_value_at_hl_address_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(4, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(4); }},
     JumpTableEntry{
         &set_register_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -2805,12 +2757,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &set_register_bit,
+        &set_value_at_hl_address_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(5, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(5); }},
     JumpTableEntry{
         &set_register_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -2861,12 +2810,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &set_register_bit,
+        &set_value_at_hl_address_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(6, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(6); }},
     JumpTableEntry{
         &set_register_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
@@ -2917,12 +2863,9 @@ std::array<JumpTableEntry, 256> jump_table_cb = {
             return static_cast<void *>(args);
         }},
     JumpTableEntry{
-        &set_register_bit,
+        &set_value_at_hl_address_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *
-        {
-            auto *args = new std::pair<uint8_t, uint8_t *>(7, cpu->get_mem_pointer_from_hl());
-            return static_cast<void *>(args);
-        }},
+        { return reinterpret_cast<void *>(7); }},
     JumpTableEntry{
         &set_register_bit,
         [](Cpu *cpu, uint8_t *instr_ptr) -> void *

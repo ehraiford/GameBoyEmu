@@ -256,7 +256,7 @@ void Cpu::add_with_carry_register_to_a(void *args)
 // ADC A,[HL]
 void Cpu::add_with_carry_from_hl_address_to_a(void *args)
 {
-    uint8_t value = *reinterpret_cast<uint8_t *>(args) + (this->get_flag(Flag::C_FLAG) << 8);
+    uint8_t value = this->ram->get_memory(this->get_hl());
     uint16_t result = this->a + value;
 
     this->set_flags_addition(this->a, value, result);
@@ -677,7 +677,7 @@ void Cpu::rotate_register_left_with_carry(void *args)
     *reg = value;
 };
 // RLC [HL]
-void Cpu::rotate_value_at_hl_address_left_carry(void *args)
+void Cpu::rotate_value_at_hl_address_left_with_carry(void *args)
 {
     uint8_t value = this->ram->get_memory(this->get_hl());
     bool new_carry = value & 0b10000000;
@@ -1169,3 +1169,4 @@ void Cpu::nop(void *args) {};
 void Cpu::stop(void *args) {
     // TODO
 };
+void Cpu::unsupported_op(void *args) {};

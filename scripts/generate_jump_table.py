@@ -14,7 +14,7 @@ class Argument:
         return cls("instr_ptr + 1", "uint8_t*")
     @classmethod
     def immediate_8_signed(cls):
-        return cls("instr_ptr + 1", "int8_t*")
+        return cls("instr_ptr + 1", "uint8_t*")
     @classmethod
     def r8(cls, val: int, operand_in_middle_of_bit: bool):
         if operand_in_middle_of_bit:
@@ -96,6 +96,8 @@ class JumpTableEntry:
 
         if len(self.arguments) == 0:
             func += "{ return nullptr; }"
+        elif len(self.arguments) == 1 and (self.arguments[0].type == "uint8_t" or self.arguments[0].type == "Condition"):
+            func += f"{{ return reinterpret_cast<void*>({self.arguments[0].function}); }}"
         elif len(self.arguments) == 1:
             func += f"{{ return {self.arguments[0].function}; }}"
         else:
@@ -116,13 +118,61 @@ class JumpTableEntry:
 def hl_checks(byte: int):
     if byte == 0b00110100:
         return JumpTableEntry("increment_value_at_hl_address", [])
-    else:
-        return
-    
+    elif byte == 0b00110101:
+        return JumpTableEntry("decrement_value_at_hl_address", [])
+    elif byte == 0b00110110:
+        return JumpTableEntry("store_immediate_at_hl_address", [Argument.immediate_8_unsigned()])
+    elif byte == 0b01110110:
+        return JumpTableEntry("halt", [])
+    elif byte & 0b11000111 == 0b01000110:
+        return JumpTableEntry("load_from_hl_address", [Argument.r8(byte, True)])
+    elif byte & 0b11111000 == 0b01110000:
+        return JumpTableEntry("store_at_hl_address", [Argument.r8(byte, False)])
+    elif byte == 0b10000110:
+        return JumpTableEntry("add_value_at_hl_address_to_a", [])
+    elif byte == 0b10001110:
+        return JumpTableEntry("add_with_carry_from_hl_address_to_a", [])
+    elif byte == 0b10010110:
+        return JumpTableEntry("subtract_value_at_hl_address_from_a", [])
+    elif byte == 0b10011110:
+        return JumpTableEntry("subtract_with_carry_value_at_hl_address_from_a", [])
+    elif byte == 0b10100110:
+        return JumpTableEntry("and_a_with_value_at_hl_address", [])
+    elif byte == 0b10101110:
+        return JumpTableEntry("xor_a_with_value_at_hl_address", [])
+    elif byte == 0b10110110:
+        return JumpTableEntry("or_a_with_value_at_hl_address", [])
+    elif byte == 0b10111110:
+        return JumpTableEntry("compare_a_with_value_at_hl_address", [])
+
+def hl_cb_checks(byte: int):
+    if byte == 0b00000110:
+        return JumpTableEntry("rotate_value_at_hl_address_left_with_carry", [])
+    elif byte == 0b00001110:
+        return JumpTableEntry("rotate_value_at_hl_address_right_with_carry", [])
+    elif byte == 0b00010110:
+        return JumpTableEntry("rotate_value_at_hl_address_left", [])
+    elif byte == 0b00011110:
+        return JumpTableEntry("rotate_value_at_hl_address_left", [])
+    elif byte == 0b00100110:
+        return JumpTableEntry("shift_value_at_hl_address_left_arithmetically", [])
+    elif byte == 0b00101110:
+        return JumpTableEntry("shift_value_at_hl_address_right_arithmetically", [])
+    elif byte == 0b00110110:
+        return JumpTableEntry("swap_register_nibbles", [])
+    elif byte == 0b00111110:
+        return JumpTableEntry("shift_value_at_hl_address_right_logically", [])
+    elif byte & 0b11000111 == 0b01000110:
+        return JumpTableEntry("set_zflag_if_value_at_hl_address_bit_not_set", [Argument.bit_index(byte)])
+    elif byte & 0b11000111 == 0b10000110:
+        return JumpTableEntry("clear_value_at_hl_address_bit", [Argument.bit_index(byte)])
+    elif byte & 0b11000111 == 0b11000110:
+        return JumpTableEntry("set_value_at_hl_address_bit", [Argument.bit_index(byte)])
 
 def decode_byte(byte: int):
     hl_op = hl_checks(byte)
     if hl_op : return hl_op
+
     if byte == 0:
         return JumpTableEntry("nop", [])
     elif byte & 0b11001111 == 0b00000001:
@@ -172,15 +222,11 @@ def decode_byte(byte: int):
     elif byte == 0b00011000:
         return JumpTableEntry("jump_relative_to_immediate", [Argument.immediate_8_signed()])
     elif byte & 0b11100111 == 0b00100000:
-        return JumpTableEntry("jump_relative_to_immediate_conditionally", [Argument.immediate_8_signed()])
+        return JumpTableEntry("jump_relative_to_immediate_conditionally", [Argument.condition(byte), Argument.immediate_8_signed()])
     elif byte == 0b10000:
         return JumpTableEntry("stop", [])
-    elif byte == 0b01110110:
-        return JumpTableEntry("halt", [])
     elif byte & 0b11000000 == 0b01000000:
         return JumpTableEntry("copy", [Argument.r8(byte, True), Argument.r8(byte, False)])
-    elif byte == 0b01110110:
-        return JumpTableEntry("halt", [])
     elif byte & 0b11111000 == 0b10000000:
         return JumpTableEntry("add_register_to_a", [Argument.r8(byte, False)])
     elif byte & 0b11111000 == 0b10001000:
@@ -230,7 +276,7 @@ def decode_byte(byte: int):
     elif byte == 0b11001101:
         return JumpTableEntry("call", [Argument.immediate_16()])
     elif byte & 0b11000111 == 0b11000111:
-        return JumpTableEntry("call_vec", [Argument(f"reinterpret_cast<void*>({(byte & 0b00111000) >> 3})", "uint8_t")])
+        return JumpTableEntry("call_vec", [Argument(f"reinterpret_cast<void*>({(byte & 0b00111000) >> 3})", "")])
     elif byte & 0b11001111 == 0b11000001:
         return JumpTableEntry("pop_stack_to_16bit_register", [Argument.r16stk(byte)])
     elif byte & 0b11001111 == 0b11000101:
@@ -265,6 +311,9 @@ def decode_byte(byte: int):
         print(f"What is missing: 0b{byte:08b}")
 
 def decode_cb_byte(byte: int):
+    hl_op = hl_cb_checks(byte)
+    if hl_op : return hl_op
+
     if byte & 0b11111000 == 0b00000000:
         return JumpTableEntry("rotate_register_left_with_carry", [Argument.r8(byte, False)])
     elif byte & 0b11111000 == 0b00001000:
