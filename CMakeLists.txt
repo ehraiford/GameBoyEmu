@@ -16,11 +16,9 @@ add_executable(GameBoyEmu
 
 target_include_directories(GameBoyEmu PRIVATE src)
 
-# Add the Rust cdylib
 add_library(rust_lib SHARED IMPORTED)
 set_target_properties(rust_lib PROPERTIES
-    IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/../gui/fast_emu_gui/target/release/libfast_emu_gui.so" 
+    IMPORTED_LOCATION "../gui/fast_emu_gui/target/release/libfast_emu_gui.dylib"
 )
 
-# Link the Rust library to the main executable
 target_link_libraries(GameBoyEmu PRIVATE rust_lib)

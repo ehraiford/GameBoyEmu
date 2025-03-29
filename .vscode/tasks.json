@@ -2,47 +2,18 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build with Sanitizers",
-            "type": "shell",
-            "command": "g++",
-            "args": [
-                "-std=c++23",
-                "-fsanitize=undefined",
-                "-g",
-                "-o",
-                "gameboy_emulator",
-                "./cpp_src/main.cpp",
-                "./cpp_src/Ram.cpp",
-                "./cpp_src/Cpu.cpp",
-                "./cpp_src/Opcodes.cpp"
-            ],
-            "problemMatcher": []
-        },
-        {
-            "label": "Run Cppcheck",
-            "type": "shell",
-            "command": "cppcheck --enable=all --inconclusive ${file}",
-            "problemMatcher": []
-        },
-        {
-            "label": "Run Emulator",
-            "type": "shell",
-            "command": "./gameboy_emulator",
-            "dependsOn": "Build With Sanitiers",
-            "problemMatcher": []
-        },
-        {
-            "label": "Run Infer",
-            "type": "shell",
-            "command": "infer run -- clang++ -c ${file}",
-            "problemMatcher": []
-        },
-        {
             "label": "Build and Run (Including Rust)",
             "type": "shell",
             "command": "bash build_and_run.sh",
             "problemMatcher": [],
             "group": "build",
-        }
+        },
+        {
+            "label": "Generate JumpTables",
+            "type": "shell",
+            "command": "cd scripts && python3 generate_jump_table.py",
+            "problemMatcher": [],
+            "group": "build",
+        },
     ]
 }

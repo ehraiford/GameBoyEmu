@@ -21,3 +21,28 @@ int main()
     emu_thread.join();
     return 0;
 };
+
+class Lifter
+{
+    std::vector<JumpTableEntry> instruction_list;
+    uint16_t lift_pointer;
+    Ram *ram;
+
+    void lift_next_instruction()
+    {
+        std::array<uint8_t, 3> bytes = this->ram->get_instruction(this->lift_pointer);
+        JumpTableEntry instruction;
+        if (bytes[0] == 0xCB)
+        {
+            instruction = jump_table_cb[bytes[1]];
+        }
+        else
+        {
+            instruction = jump_table[bytes[0]];
+        }
+
+        this->lift_pointer += instruction.op_code->get_length();
+    };
+
+public:
+};

@@ -8,6 +8,10 @@ void OpCode::execute(Cpu *cpu, void *args)
 {
     (cpu->*op_func)(args);
 };
+uint8_t OpCode::get_length()
+{
+    return this->bytes;
+};
 
 static OpCode copy = OpCode(&Cpu::copy, 1, 1);
 static OpCode load_immediate_8bit = OpCode(&Cpu::load_immediate_8bit, 2, 2);

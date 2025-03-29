@@ -15,6 +15,7 @@ public:
     OpCode(OpFunc func, uint8_t cycles, uint8_t bytes) : op_func(func), cycles(cycles), bytes(bytes) {};
 
     void execute(Cpu *cpu, void *args);
+    uint8_t get_length();
 };
 
 struct JumpTableEntry
