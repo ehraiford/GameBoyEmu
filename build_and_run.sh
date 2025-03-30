@@ -8,4 +8,4 @@ cargo build --release
 cd ../../build || { echo "Directory ../../build not found"; exit 1; }
 cmake --build .
 
-./GameBoyEmu
+./GameBoyEmu "../roms/boot.bin"

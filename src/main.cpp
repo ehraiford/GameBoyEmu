@@ -42,8 +42,11 @@ class Lifter
             instruction = jump_table[bytes[0]];
         }
 
-        this->lift_pointer += instruction.op_code->get_length();
-    };
+int main(int argc, char *argv[])
+{
+    if (argc < 2)
+    {
+        std::cerr << "Usage: " << argv[0] << " <path_to_binary_file>" << std::endl;
+        return 1;
+    }
 
-public:
-};
