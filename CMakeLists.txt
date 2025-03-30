@@ -12,6 +12,7 @@ add_executable(GameBoyEmu
   ../src/Opcodes.cpp ../src/Opcodes.h 
   ../src/Cpu.cpp ../src/Cpu.h 
   ../src/Ram.cpp ../src/Ram.h 
+  ../src/FetchDecode.cpp ../src/FetchDecode.h
 )
 
 target_include_directories(GameBoyEmu PRIVATE src)
