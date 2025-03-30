@@ -1,7 +1,7 @@
 #ifndef OPCODES_H
 #define OPCODES_H
 
-#include "Cpu.h"
+#include "../core/Cpu.h"
 #include <array>
 
 typedef void (Cpu::*OpFunc)(void *);

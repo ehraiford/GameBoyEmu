@@ -1,8 +1,8 @@
 #ifndef FETCH_DECODE_H
 #define FETCH_DECODE_H
 
+#include "../core/Ram.h"
 #include "Opcodes.h"
-#include "Ram.h"
 #include <array>
 #include <queue>
 #include <string>
