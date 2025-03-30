@@ -2,6 +2,7 @@
 #define RAM_H
 #include <mutex>
 #include <iostream>
+#include <vector>
 
 class Ram
 {
@@ -15,6 +16,13 @@ public:
     uint8_t get_memory(uint16_t address);
     std::array<uint8_t, 3> get_instruction(uint16_t address);
     void set_memory(uint16_t address, uint8_t value);
+    void load_data(const std::vector<uint8_t> &data)
+    {
+        for (size_t i = 0; i < data.size(); ++i)
+        {
+            this->set_memory(i, data[i]);
+        }
+    }
 };
 
 #endif

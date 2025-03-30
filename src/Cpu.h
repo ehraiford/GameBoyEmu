@@ -193,9 +193,9 @@ public:
     void halt(void *args);               // HALT
 
     // Miscellaneous
-    void decimal_adjust_accumulator(void *args);
-    void nop(void *args);
-    void stop(void *args);
+    void decimal_adjust_accumulator(void *args); // DAA
+    void nop(void *args);                        // NOP
+    void stop(void *args);                       // STOP
 
     void unsupported_op(void *args);
 };
