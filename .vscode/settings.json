@@ -65,6 +65,9 @@
     "cmake.sourceDirectory": "/Users/evanraiford/EmulatorCpp",
     "editor.formatOnSave": true,
     "[rust]": {
-        "editor.defaultFormatter": "rust-lang.rust-analyzer"
+        "editor.defaultFormatter": "rust-lang.rust-analyzer",
     },
+    "[cpp]": {
+        "editor.defaultFormatter": "ms-vscode.cpptools"
+    }
 }

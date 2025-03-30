@@ -1,4 +1,4 @@
-#include "FetchDecode.h"
+#include "fetch_decode.h"
 #include <iostream>
 
 FetchedInstruction::FetchedInstruction(std::array<uint8_t, 3> bytes) {
@@ -10,13 +10,9 @@ FetchedInstruction::FetchedInstruction(std::array<uint8_t, 3> bytes) {
   this->disassembly = this->jump_table_entry.get_disassembly(bytes);
 }
 
-uint8_t FetchedInstruction::get_instruction_length() {
-  return this->jump_table_entry.op_code->get_length();
-}
+uint8_t FetchedInstruction::get_instruction_length() { return this->jump_table_entry.op_code->get_length(); }
 
-std::string FetchedInstruction::get_disassembly() {
-  return this->disassembly;
-}
+std::string FetchedInstruction::get_disassembly() { return this->disassembly; }
 
 Fetcher::Fetcher(Ram *ram) {
   this->ram = ram;
