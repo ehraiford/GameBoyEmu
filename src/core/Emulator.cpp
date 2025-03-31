@@ -1,4 +1,7 @@
 #include "Emulator.h"
+#include "../instructions/FetchDecode.h"
+
+Emulator::Emulator() : gameboy() {};
 
 void Emulator::load_rom(const std::string &file_path) {
 
@@ -12,3 +15,7 @@ void Emulator::load_rom(const std::string &file_path) {
 	this->gameboy.load_buffer_as_cartridge(buffer);
 	file.close();
 };
+
+Fetcher Emulator::create_instruction_fetcher() {
+	return Fetcher(this->gameboy.get_ram());
+}

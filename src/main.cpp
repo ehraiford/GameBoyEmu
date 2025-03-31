@@ -1,5 +1,5 @@
 #include "../gui/fast_emu_gui/fast_emu_gui.h"
-#include "./core/Emulator.h"
+#include "core/Emulator.h"
 #include "instructions/FetchDecode.h"
 #include "instructions/Opcodes.h"
 #include <fstream>
@@ -10,9 +10,9 @@
 
 void emulator(const std::string &file_path) {
 	Emulator emulator = Emulator();
-	emulator.load_rom(file_path);
 
-	Fetcher fetcher = Fetcher(&ram);
+	emulator.load_rom(file_path);
+	Fetcher fetcher = emulator.create_instruction_fetcher();
 	for (int i = 0; i < 100; i++) {
 		for (int j = 0; j < 1; j++) {
 			FetchedInstruction entry = fetcher.get_next_entry();

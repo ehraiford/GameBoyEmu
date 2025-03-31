@@ -9,9 +9,11 @@ cmake_policy(SET CMP0156 NEW)
 
 add_executable(GameBoyEmu 
   ../src/main.cpp 
-  ../src/instructions/Opcodes.cpp ../src/instructions/Opcodes.h 
+  ../src/core/Emulator.cpp ../src/core/Emulator.h
+  ../src/core/GameBoy.cpp ../src/core/GameBoy.h
   ../src/core/Cpu.cpp ../src/core/Cpu.h 
   ../src/core/Ram.cpp ../src/core/Ram.h 
+  ../src/instructions/Opcodes.cpp ../src/instructions/Opcodes.h 
   ../src/instructions/FetchDecode.cpp ../src/instructions/FetchDecode.h
 )
 
