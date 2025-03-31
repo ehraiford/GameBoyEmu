@@ -4,7 +4,7 @@
         {
             "label": "Build and Run (Including Rust)",
             "type": "shell",
-            "command": "bash build_and_run.sh",
+            "command": "cd scripts && bash build_and_run.sh",
             "problemMatcher": [],
             "group": "build",
         },
@@ -15,5 +15,10 @@
             "problemMatcher": [],
             "group": "build",
         },
+        {
+            "label": "Run Tests",
+            "type": "shell",
+            "command": "cd scripts && bash run_tests.sh"
+        }
     ]
 }
