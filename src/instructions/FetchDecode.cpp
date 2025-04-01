@@ -46,3 +46,7 @@ FetchedInstruction Fetcher::get_next_instruction_to_execute() {
 int Fetcher::get_lift_pointer() {
 	return this->lift_pointer;
 };
+
+void Fetcher::set_lift_pointer(uint16_t new_address) {
+	this->lift_pointer = new_address;
+};

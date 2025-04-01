@@ -75,11 +75,11 @@ def r16stk(val: int) -> Argument:
 def r16mem(val: int) -> Argument :
     val = (val & 0b00110000) >> 4
     if val == 0:
-        return Argument("cpu->get_bc_pointer()", "uint16_t*", "\"BC\"")
+        return Argument("cpu->get_bc_pointer()", "uint16_t*", "\"[BC]\"")
     elif val == 1:
-        return Argument("cpu->get_de_pointer()", "uint16_t*", "\"DE\"")  
+        return Argument("cpu->get_de_pointer()", "uint16_t*", "\"[DE]\"")  
     else:
-        return Argument("cpu->get_hl_pointer()", "uint16_t*", "\"HL\"")
+        return Argument("cpu->get_hl_pointer()", "uint16_t*", "\"[HL]\"")
     
 def condition(val: int) -> Argument:
     val = (val & 0b00011000) >> 3
@@ -279,17 +279,17 @@ def decode_byte(byte: int):
     elif byte & 0b11000111 == 0b00000110:
         return JumpTableEntry("load_immediate_8bit", "LD", [r8(byte, True), immediate_8_unsigned()])
     elif byte == 0b00000111:
-        return JumpTableEntry("rotate_a_left_with_carry", "RLCA", [a()])
+        return JumpTableEntry("rotate_a_left_with_carry", "RLCA", [])
     elif byte == 0b00001111:
-        return JumpTableEntry("rotate_a_right_with_carry", "RRCA", [a()])
+        return JumpTableEntry("rotate_a_right_with_carry", "RRCA", [])
     elif byte == 0b00010111:
-        return JumpTableEntry("rotate_a_left", "RLA", [a()])
+        return JumpTableEntry("rotate_a_left", "RLA", [])
     elif byte == 0b00011111:
-        return JumpTableEntry("rotate_a_right", "RRA", [a()])
+        return JumpTableEntry("rotate_a_right", "RRA", [])
     elif byte == 0b00100111:
         return JumpTableEntry("decimal_adjust_accumulator", "DAA", [])
     elif byte == 0b00101111:
-        return JumpTableEntry("invert_a", "CPL", [a()])
+        return JumpTableEntry("invert_a", "CPL", [])
     elif byte == 0b00110111:
         return JumpTableEntry("set_carry_flag", "SCF", [])
     elif byte == 0b00111111:

@@ -165,7 +165,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   return cpu->get_bc_pointer();
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "LD BC";
+					   return "LD [BC]";
 				   }},
 	JumpTableEntry{&increment_16bit_register,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -205,7 +205,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   return nullptr;
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "RLCA A";
+					   return "RLCA";
 				   }},
 	JumpTableEntry{&store_sp_at_immediate_address,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -228,7 +228,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   return cpu->get_bc_pointer();
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "LD A,BC";
+					   return "LD A,[BC]";
 				   }},
 	JumpTableEntry{&decrement_16bit_register,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -268,7 +268,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   return nullptr;
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "RRCA A";
+					   return "RRCA";
 				   }},
 	JumpTableEntry{&stop,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -295,7 +295,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   return cpu->get_de_pointer();
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "LD DE";
+					   return "LD [DE]";
 				   }},
 	JumpTableEntry{&increment_16bit_register,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -335,7 +335,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   return nullptr;
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "RLA A";
+					   return "RLA";
 				   }},
 	JumpTableEntry{&jump_relative_to_immediate,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -358,7 +358,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   return cpu->get_de_pointer();
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "LD A,DE";
+					   return "LD A,[DE]";
 				   }},
 	JumpTableEntry{&decrement_16bit_register,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -398,7 +398,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   return nullptr;
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "RRA A";
+					   return "RRA";
 				   }},
 	JumpTableEntry{&jump_relative_to_immediate_conditionally,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -536,7 +536,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   return nullptr;
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "CPL A";
+					   return "CPL";
 				   }},
 	JumpTableEntry{&jump_relative_to_immediate_conditionally,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {

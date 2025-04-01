@@ -27,6 +27,7 @@ class Fetcher {
 	void fetch_another_instruction();
 	FetchedInstruction get_next_instruction_to_execute();
 	int get_lift_pointer();
+	void set_lift_pointer(uint16_t new_address);
 };
 
 #endif // FETCH_DECODE_H

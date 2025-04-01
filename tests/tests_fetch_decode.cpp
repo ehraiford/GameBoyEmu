@@ -54,7 +54,7 @@ TEST(FetchDecodeTests, TestDecoding) {
 		{"INC DE", 0x2e},
 		{"LD A,E", 0x2f},
 		{"CP $34", 0x30},
-		{"JR NZ, Addr_0027", 0x32},
+		{"JR NZ,$f3", 0x32},
 		{"LD DE,$00d8", 0x34},
 		{"LD B,$08", 0x37},
 		{"LD A,[DE]", 0x39},
@@ -62,43 +62,43 @@ TEST(FetchDecodeTests, TestDecoding) {
 		{"LD [HLI],A", 0x3b},
 		{"INC HL", 0x3c},
 		{"DEC B", 0x3d},
-		{"JR NZ, Addr_0039", 0x3e},
+		{"JR NZ,$f9", 0x3e},
 		{"LD A,$19", 0x40},
 		{"LD [$9910],A", 0x42},
 		{"LD HL,$992f", 0x45},
 		{"LD C,$0c", 0x48},
 		{"DEC A", 0x4a},
-		{"JR Z, Addr_0055", 0x4b},
+		{"JR Z,$08", 0x4b},
 		{"LD [HLD],A", 0x4d},
 		{"DEC C", 0x4e},
-		{"JR NZ, Addr_004A", 0x4f},
+		{"JR NZ,$f9", 0x4f},
 		{"LD L,$0f", 0x51},
-		{"JR Addr_0048", 0x53},
+		{"JR $f3", 0x53},
 		{"LD H,A", 0x55},
 		{"LD A,$64", 0x56},
 		{"LD D,A", 0x58},
-		{"LD H[$42],A", 0x59},
+		{"LDH [$42],A", 0x59},
 		{"LD A,$91", 0x5b},
 		{"LDH [$40],A", 0x5d},
 		{"INC B", 0x5f},
 		{"LD E,$02", 0x60},
 		{"LD C,$0c", 0x62},
-		{"LDH A,[$44)", 0x64},
+		{"LDH A,[$44]", 0x64},
 		{"CP $90", 0x66},
-		{"JR NZ, Addr_0064", 0x68},
+		{"JR NZ,$fa", 0x68},
 		{"DEC C", 0x6a},
-		{"JR NZ, Addr_0064", 0x6b},
+		{"JR NZ,$f7", 0x6b},
 		{"DEC E", 0x6d},
-		{"JR NZ, Addr_0062", 0x6e},
+		{"JR NZ,$f2", 0x6e},
 		{"LD C,$13", 0x70},
 		{"INC H", 0x72},
 		{"LD A,H", 0x73},
 		{"LD E,$83", 0x74},
 		{"CP $62", 0x76},
-		{"JR Z, Addr_0080", 0x78},
+		{"JR Z,$06", 0x78},
 		{"LD E,$c1", 0x7a},
 		{"CP $64", 0x7c},
-		{"JR NZ, Addr_0086", 0x7e},
+		{"JR NZ,$06", 0x7e},
 		{"LD A,E", 0x80},
 		{"LDH [C],A", 0x81},
 		{"INC C", 0x82},
@@ -108,11 +108,11 @@ TEST(FetchDecodeTests, TestDecoding) {
 		{"SUB B", 0x88},
 		{"LDH [$42],A", 0x89},
 		{"DEC D", 0x8b},
-		{"JR NZ, Addr_0060", 0x8c},
+		{"JR NZ,$d2", 0x8c},
 		{"DEC B", 0x8e},
-		{"JR NZ, Addr_00E0", 0x8f},
+		{"JR NZ,$4f", 0x8f},
 		{"LD D,$20", 0x91},
-		{"JR Addr_0060", 0x93},
+		{"JR $cb", 0x93},
 		{"LD C,A", 0x95},
 		{"LD B,$04", 0x96},
 		{"PUSH BC", 0x98},
@@ -122,30 +122,30 @@ TEST(FetchDecodeTests, TestDecoding) {
 		{"RL C", 0x9d},
 		{"RLA", 0x9f},
 		{"DEC B", 0xa0},
-		{"JR NZ, Addr_0098", 0xa1},
+		{"JR NZ,$f5", 0xa1},
 		{"LD [HLI],A", 0xa3},
 		{"INC HL", 0xa4},
 		{"LD [HLI],A", 0xa5},
 		{"INC HL", 0xa6},
 		{"RET", 0xa7},
-		// BREAK HERE
+		// ... //
 		{"LD HL,$0104", 0xe0},
 		{"LD DE,$00a8", 0xe3},
 		{"LD A,[DE]", 0xe6},
 		{"INC DE", 0xe7},
-		{"CP (HL)", 0xe8},
+		{"CP A,[HL]", 0xe8},
 		{"JR NZ,$fe", 0xe9},
 		{"INC HL", 0xeb},
 		{"LD A,L", 0xec},
 		{"CP $34", 0xed},
-		{"JR NZ, Addr_00E6", 0xef},
+		{"JR NZ,$f5", 0xef},
 		{"LD B,$19", 0xf1},
 		{"LD A,B", 0xf3},
-		{"ADD (HL)", 0xf4},
+		{"ADD A,[HL]", 0xf4},
 		{"INC HL", 0xf5},
 		{"DEC B", 0xf6},
-		{"JR NZ, Addr_00F4", 0xf7},
-		{"ADD (HL)", 0xf9},
+		{"JR NZ,$fb", 0xf7},
+		{"ADD A,[HL]", 0xf9},
 		{"JR NZ,$fe", 0xfa},
 		{"LD A,$01", 0xfc},
 		{"LDH [$50],A", 0xfe},
@@ -155,17 +155,23 @@ TEST(FetchDecodeTests, TestDecoding) {
 		int address = fetcher.get_lift_pointer();
 		FetchedInstruction instruction = fetcher.get_next_instruction_to_execute();
 		std::array<uint8_t, 3> bytes = ram.get_instruction(address);
-		for (int i = 0; i < 3; i++) {
-			std::cout << std::format("0b{:08b}, ", bytes[i]);
+		std::cout << instruction.get_disassembly() << ": ";
+		for (int j = 0; j < 3; j++) {
+			std::cout << std::format("0b{:08b}, ", bytes[j]);
 		}
 		std::cout << std::endl;
 		ASSERT_EQ(instruction.get_disassembly(), std::get<0>(expected_disassemblies[i]));
 		ASSERT_EQ(address, std::get<1>(expected_disassemblies[i]));
 	}
-	// todo add a second loop for the last 20 instructions
-	// todo we need a way to change the address of the lift_pointer, too...
 
-	EXPECT_EQ(1, 1);
+	fetcher.set_lift_pointer(0xe0);
+	for (int i = 0; i < 20; i++) {
+		int address = fetcher.get_lift_pointer();
+		FetchedInstruction instruction = fetcher.get_next_instruction_to_execute();
+		std::array<uint8_t, 3> bytes = ram.get_instruction(address);
+		ASSERT_EQ(instruction.get_disassembly(), std::get<0>(expected_disassemblies[i + 101]));
+		ASSERT_EQ(address, std::get<1>(expected_disassemblies[i + 101]));
+	}
 }
 
 int main(int argc, char **argv) {
