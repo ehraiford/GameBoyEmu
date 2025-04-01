@@ -157,7 +157,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   std::string string = "LD ";
 					   string += "BC";
 					   string += ",";
-					   string += std::format("0x{:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&store_a_at_register_address,
@@ -208,7 +208,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "SP ";
-					   string += std::format("0x{:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&add_16bit_register_to_HL,
@@ -277,7 +277,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   std::string string = "LD ";
 					   string += "DE";
 					   string += ",";
-					   string += std::format("0x{:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&store_a_at_register_address,
@@ -328,7 +328,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "JR ";
-					   string += std::format("0x{:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&add_16bit_register_to_HL,
@@ -389,7 +389,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   std::string string = "JR ";
 					   string += "NZ";
 					   string += ",";
-					   string += std::format("0x{:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&load_immediate_16bit,
@@ -402,7 +402,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   std::string string = "LD ";
 					   string += "HL";
 					   string += ",";
-					   string += std::format("0x{:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&store_a_at_hl_address_increment,
@@ -456,7 +456,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   std::string string = "JR ";
 					   string += "Z";
 					   string += ",";
-					   string += std::format("0x{:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&add_16bit_register_to_HL,
@@ -517,7 +517,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   std::string string = "JR ";
 					   string += "NC";
 					   string += ",";
-					   string += std::format("0x{:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&load_immediate_16bit,
@@ -530,7 +530,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   std::string string = "LD ";
 					   string += "SP";
 					   string += ",";
-					   string += std::format("0x{:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&store_a_at_hl_address_decrement,
@@ -569,7 +569,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   std::string string = "LD ";
 					   string += "[HL]";
 					   string += ",";
-					   string += std::format("0x{:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&set_carry_flag,
@@ -588,7 +588,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   std::string string = "JR ";
 					   string += "C";
 					   string += ",";
-					   string += std::format("0x{:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&add_16bit_register_to_HL,
@@ -1609,7 +1609,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   std::string string = "JP ";
 					   string += "NZ";
 					   string += ",";
-					   string += std::format("0x{:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&jump_to_immediate,
@@ -1618,7 +1618,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "JP ";
-					   string += std::format("0x{:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&call_conditionally,
@@ -1631,7 +1631,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   std::string string = "CALL ";
 					   string += "NZ";
 					   string += ",";
-					   string += std::format("0x{:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&push_16bit_register_to_stack,
@@ -1647,7 +1647,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "ADD ";
-					   string += std::format("0x{:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&call_vec,
@@ -1683,7 +1683,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   std::string string = "JP ";
 					   string += "Z";
 					   string += ",";
-					   string += std::format("0x{:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&nop,
@@ -1703,7 +1703,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   std::string string = "CALL ";
 					   string += "Z";
 					   string += ",";
-					   string += std::format("0x{:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&call,
@@ -1712,7 +1712,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "CALL ";
-					   string += std::format("0x{:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&add_with_carry_immediate_to_a,
@@ -1721,7 +1721,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "ADC ";
-					   string += std::format("0x{:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&call_vec,
@@ -1757,7 +1757,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   std::string string = "JP ";
 					   string += "NC";
 					   string += ",";
-					   string += std::format("0x{:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&unsupported_op,
@@ -1777,7 +1777,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   std::string string = "CALL ";
 					   string += "NC";
 					   string += ",";
-					   string += std::format("0x{:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&push_16bit_register_to_stack,
@@ -1793,7 +1793,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "SUB ";
-					   string += std::format("0x{:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&call_vec,
@@ -1829,7 +1829,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   std::string string = "JP ";
 					   string += "C";
 					   string += ",";
-					   string += std::format("0x{:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&unsupported_op,
@@ -1849,7 +1849,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   std::string string = "CALL ";
 					   string += "C";
 					   string += ",";
-					   string += std::format("0x{:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&unsupported_op,
@@ -1865,7 +1865,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "SBC ";
-					   string += std::format("0x{:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&call_vec,
@@ -1883,7 +1883,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "LDH ";
-					   string += std::format("0x{:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&pop_stack_to_16bit_register,
@@ -1927,7 +1927,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "AND ";
-					   string += std::format("0x{:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&call_vec,
@@ -1945,7 +1945,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "ADD ";
-					   string += std::format("0x{:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&jump_to_value_at_hl_address,
@@ -1961,7 +1961,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "LD ";
-					   string += std::format("0x{:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&unsupported_op,
@@ -1991,7 +1991,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "XOR ";
-					   string += std::format("0x{:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&call_vec,
@@ -2009,7 +2009,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "LDH ";
-					   string += std::format("0x{:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&pop_stack_to_16bit_register,
@@ -2053,7 +2053,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "OR ";
-					   string += std::format("0x{:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&call_vec,
@@ -2071,7 +2071,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "LD ";
-					   string += std::format("0x{:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&copy_hl_to_sp,
@@ -2115,7 +2115,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "CP ";
-					   string += std::format("0x{:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&call_vec,

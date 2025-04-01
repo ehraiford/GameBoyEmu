@@ -53,6 +53,7 @@
         "algorithm": "cpp"
     },
     "cSpell.words": [
+        "ctest",
         "fsanitize",
         "gameboy",
         "GAMEBOYEMU",

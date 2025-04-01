@@ -24,19 +24,25 @@ Fetcher::Fetcher(Ram *ram) {
 	instruction_list = std::queue<FetchedInstruction>();
 }
 
-void Fetcher::fetch_next_instruction() {
+void Fetcher::fetch_another_instruction() {
 	std::array<uint8_t, 3> bytes = this->ram->get_instruction(this->lift_pointer);
 	FetchedInstruction instruction = FetchedInstruction(bytes);
 	this->instruction_list.push(instruction);
 
+	std::cout << "Was pointing to:" << this->lift_pointer;
 	this->lift_pointer += instruction.get_instruction_length();
+	std::cout << ". Now pointing to: " << this->lift_pointer << std::endl;
 }
 
-FetchedInstruction Fetcher::get_next_entry() {
+FetchedInstruction Fetcher::get_next_instruction_to_execute() {
 	if (this->instruction_list.empty()) {
-		this->fetch_next_instruction();
+		this->fetch_another_instruction();
 	}
 	FetchedInstruction entry = this->instruction_list.front();
 	this->instruction_list.pop();
 	return entry;
 }
+
+int Fetcher::get_lift_pointer() {
+	return this->lift_pointer;
+};

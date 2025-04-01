@@ -2,6 +2,9 @@
 #include "../instructions/FetchDecode.h"
 
 Emulator::Emulator() : gameboy() {};
+Emulator::Emulator(const std::string &file_path) : gameboy() {
+	this->load_rom(file_path);
+}
 
 void Emulator::load_rom(const std::string &file_path) {
 

@@ -3,3 +3,4 @@ scripts/jump_table_py_output.txt
 .DS_Store
 /roms
 /tests/build
+/scratch

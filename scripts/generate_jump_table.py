@@ -28,17 +28,17 @@ def a() -> Argument:
 
 def immediate_16() -> Argument:
     function = "reinterpret_cast<uint16_t*>(instr_ptr + 1)"
-    disassembly = f"std::format(\"0x{{:04x}}\", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]))"
+    disassembly = f"std::format(\"${{:04x}}\", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]))"
     return Argument(function, "uint16_t*", disassembly)
 
 def immediate_8_unsigned() -> Argument:
     function = "instr_ptr + 1"
-    disassembly = f"std::format(\"0x{{:02x}}\", static_cast<int>(bytes[1]))"
+    disassembly = f"std::format(\"${{:02x}}\", static_cast<int>(bytes[1]))"
     return Argument(function, "uint8_t*", disassembly)
 
 def immediate_8_signed() -> Argument:
     function = "instr_ptr + 1"
-    disassembly = f"std::format(\"0x{{:02x}}\", static_cast<int>(bytes[1]))"
+    disassembly = f"std::format(\"${{:02x}}\", static_cast<int>(bytes[1]))"
     return Argument(function, "uint8_t*", disassembly)
 
 def r8(val: int, operand_in_middle_of_bit: bool) -> Argument:

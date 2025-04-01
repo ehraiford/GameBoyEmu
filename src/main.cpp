@@ -15,7 +15,7 @@ void emulator(const std::string &file_path) {
 	Fetcher fetcher = emulator.create_instruction_fetcher();
 	for (int i = 0; i < 100; i++) {
 		for (int j = 0; j < 1; j++) {
-			FetchedInstruction entry = fetcher.get_next_entry();
+			FetchedInstruction entry = fetcher.get_next_instruction_to_execute();
 			std::cout << entry.get_disassembly() << ",\t";
 		}
 		std::cout << std::endl;

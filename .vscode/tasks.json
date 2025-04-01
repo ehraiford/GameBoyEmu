@@ -6,19 +6,20 @@
             "type": "shell",
             "command": "cd scripts && bash build_and_run.sh",
             "problemMatcher": [],
-            "group": "build",
+            "group": "build"
         },
         {
             "label": "Generate JumpTables",
             "type": "shell",
             "command": "cd scripts && python3 generate_jump_table.py",
             "problemMatcher": [],
-            "group": "build",
+            "group": "build"
         },
         {
             "label": "Run Tests",
             "type": "shell",
-            "command": "cd scripts && bash run_tests.sh"
+            "command": "cd scripts && bash run_tests.sh",
+            "problemMatcher": []
         }
     ]
 }
