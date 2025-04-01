@@ -14,18 +14,6 @@ def remove_na_arguments(arguments: list[Argument]) -> list[Argument]:
             return_args.append(arguments[i])
     return return_args
 
-def hl_pointer() -> Argument:
-    return Argument("N/A", "N/A", "\"[HL]\"")
-
-def hli_pointer() -> Argument:
-    return Argument("N/A", "N/A", "\"[HLI]\"")
-
-def hld_pointer() -> Argument:
-    return Argument("N/A", "N/A", "\"[HLD]\"")
-
-def a() -> Argument:
-    return Argument("N/A", "N/A", "\"A\"")
-
 def immediate_16() -> Argument:
     function = "reinterpret_cast<uint16_t*>(instr_ptr + 1)"
     disassembly = f"std::format(\"${{:04x}}\", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]))"
@@ -107,6 +95,40 @@ def condition(val: int) -> Argument:
 def bit_index(val: int) -> Argument:
     val = (val & 0b00111000) >> 3
     return Argument(val, "uint8_t", f"\"{val}\"") 
+
+def hardware_address() -> Argument:
+    function = "instr_ptr + 1"
+    disassembly = f"std::format(\"[${{:02x}}]\", static_cast<int>(bytes[1]))"
+    return Argument(function, "uint8_t*", disassembly)
+
+def immediate_16_address() -> Argument:
+    function = "reinterpret_cast<uint16_t*>(instr_ptr + 1)"
+    disassembly = f"std::format(\"[${{:04x}}]\", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]))"
+    return Argument(function, "uint16_t*", disassembly)
+
+# The following functions are for operands used in opcodes mapped to functions where accessing said operand is part of the logic
+# so they only exist for the disassembly view and the rest of the data is ignored
+def sp() -> Argument:
+    return Argument("N/A", "N/A", "\"SP\"")
+# same as sp() above
+def c_offset() -> Argument:
+    return Argument("N/A", "N/A", "\"[C]\"")
+def hl() -> Argument:
+    return Argument("N/A", "N/A", "\"HL\"")
+def hl_pointer() -> Argument:
+    return Argument("N/A", "N/A", "\"[HL]\"")
+def hli_pointer() -> Argument:
+    return Argument("N/A", "N/A", "\"[HLI]\"")
+def hld_pointer() -> Argument:
+    return Argument("N/A", "N/A", "\"[HLD]\"")
+def a() -> Argument:
+    return Argument("N/A", "N/A", "\"A\"")
+# this one, we need immediate, not signed so it's kinda like the above but not quite
+def sp_plus_signed_immediate():
+    function = "instr_ptr + 1"
+    disassembly = f"std::format(\"SP + {{}}\", static_cast<int>(bytes[1]))"
+    return Argument(function, "uint8_t*", disassembly)
+
 class JumpTableEntry:
 
     def __init__(self, instruction_name: str, op_name: str, arguments: list[Argument]):
@@ -212,7 +234,7 @@ def hl_cb_checks(byte: int):
     elif byte == 0b00101110:
         return JumpTableEntry("shift_value_at_hl_address_right_arithmetically", "SRA", [hl_pointer()])
     elif byte == 0b00110110:
-        return JumpTableEntry("swap_register_nibbles", "SWAP", [])
+        return JumpTableEntry("swap_value_at_hl_address_nibbles", "SWAP", [hl()])
     elif byte == 0b00111110:
         return JumpTableEntry("shift_value_at_hl_address_right_logically", "SRL", [hl_pointer()])
     elif byte & 0b11000111 == 0b01000110:
@@ -241,7 +263,7 @@ def decode_byte(byte: int):
     elif byte == 0b00111010:
         return JumpTableEntry("load_a_from_hl_address_decrement", "LD", [a(), hld_pointer()])
     elif byte & 0b11001111 == 0b00001010:
-        return JumpTableEntry("load_a_from_register_address", "LD", [r16mem(byte)])
+        return JumpTableEntry("load_a_from_register_address", "LD", [a(), r16mem(byte)])
     elif byte == 0b00001000:
         return JumpTableEntry("store_sp_at_immediate_address", "SP", [immediate_16()])
     elif byte & 0b11001111 == 0b00000011:
@@ -255,19 +277,19 @@ def decode_byte(byte: int):
     elif byte & 0b11000111 == 0b00000101:
         return JumpTableEntry("decrement_register", "DEC", [r8(byte, True)])
     elif byte & 0b11000111 == 0b00000110:
-        return JumpTableEntry("load_immediate_8bit", "LD", [r8(byte, True)])
+        return JumpTableEntry("load_immediate_8bit", "LD", [r8(byte, True), immediate_8_unsigned()])
     elif byte == 0b00000111:
-        return JumpTableEntry("rotate_a_left_with_carry", "RLCA", [])
+        return JumpTableEntry("rotate_a_left_with_carry", "RLCA", [a()])
     elif byte == 0b00001111:
-        return JumpTableEntry("rotate_a_right_with_carry", "RRCA", [])
+        return JumpTableEntry("rotate_a_right_with_carry", "RRCA", [a()])
     elif byte == 0b00010111:
-        return JumpTableEntry("rotate_a_left", "RLA", [])
+        return JumpTableEntry("rotate_a_left", "RLA", [a()])
     elif byte == 0b00011111:
-        return JumpTableEntry("rotate_a_right", "RRA", [])
+        return JumpTableEntry("rotate_a_right", "RRA", [a()])
     elif byte == 0b00100111:
         return JumpTableEntry("decimal_adjust_accumulator", "DAA", [])
     elif byte == 0b00101111:
-        return JumpTableEntry("invert_a", "CPL", [])
+        return JumpTableEntry("invert_a", "CPL", [a()])
     elif byte == 0b00110111:
         return JumpTableEntry("set_carry_flag", "SCF", [])
     elif byte == 0b00111111:
@@ -323,7 +345,7 @@ def decode_byte(byte: int):
     elif byte == 0b11000011:
         return JumpTableEntry("jump_to_immediate", "JP", [immediate_16()])
     elif byte == 0b11101001:
-        return JumpTableEntry("jump_to_value_at_hl_address", "JP", [])
+        return JumpTableEntry("jump_to_value_at_hl_address", "JP", [hl_pointer()])
     elif byte & 0b11100111 == 0b11000100:
         return JumpTableEntry("call_conditionally", "CALL", [condition(byte), immediate_16()])
     elif byte == 0b11001101:
@@ -337,23 +359,23 @@ def decode_byte(byte: int):
     elif byte == 0b11001011:
         return JumpTableEntry("nop", "CB INSTRUCTION", [])
     elif byte == 0b11100010:
-        return JumpTableEntry("store_a_at_hardware_address_offset_by_c", "LDH", [])
+        return JumpTableEntry("store_a_at_hardware_address_offset_by_c", "LDH", [c_offset(), a()])
     elif byte == 0b11100000:
-        return JumpTableEntry("store_a_at_immediate_hardware_address", "LDH", [immediate_8_unsigned()])
+        return JumpTableEntry("store_a_at_immediate_hardware_address", "LDH", [hardware_address(), a()])
     elif byte == 0b11101010:
-        return JumpTableEntry("store_a_at_immediate_address", "LD", [immediate_16()])
+        return JumpTableEntry("store_a_at_immediate_address", "LD", [immediate_16_address(), a()])
     elif byte == 0b11110010:
-        return JumpTableEntry("load_a_from_hardware_address_offset_by_c", "LDH", [])
+        return JumpTableEntry("load_a_from_hardware_address_offset_by_c", "LDH", [a(), c_offset()])
     elif byte == 0b11110000:
-        return JumpTableEntry("load_a_from_immediate_hardware_address", "LDH", [immediate_8_unsigned()])
+        return JumpTableEntry("load_a_from_immediate_hardware_address", "LDH", [a(), hardware_address()])
     elif byte == 0b11111010:
-        return JumpTableEntry("load_a_from_immediate_address", "LD", [])
+        return JumpTableEntry("load_a_from_immediate_address", "LD", [a(), immediate_16_address()])
     elif byte == 0b11101000:
-        return JumpTableEntry("add_signed_immediate_to_sp", "ADD", [immediate_8_signed()])
+        return JumpTableEntry("add_signed_immediate_to_sp", "ADD", [sp(), immediate_8_signed()])
     elif byte == 0b11111000:
-        return JumpTableEntry("load_hl_from_sp_plus_signed_immediate", "LD", [immediate_8_signed()])
+        return JumpTableEntry("load_hl_from_sp_plus_signed_immediate", "LD", [hl(), sp_plus_signed_immediate()])
     elif byte == 0b11111001:
-        return JumpTableEntry("copy_hl_to_sp", "LD", [])
+        return JumpTableEntry("copy_hl_to_sp", "LD", [sp(), hl()])
     elif byte == 0b11110011:
         return JumpTableEntry("disable_interrupts", "DI", [])
     elif byte == 0b11111011:

@@ -190,17 +190,22 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   }},
 	JumpTableEntry{&load_immediate_8bit,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
-					   return cpu->get_b_pointer();
+					   auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_b_pointer(), instr_ptr + 1);
+					   return static_cast<void *>(args);
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "LD B";
+					   std::string string = "LD ";
+					   string += "B";
+					   string += ",";
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
+					   return string;
 				   }},
 	JumpTableEntry{&rotate_a_left_with_carry,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
 					   return nullptr;
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "RLCA";
+					   return "RLCA A";
 				   }},
 	JumpTableEntry{&store_sp_at_immediate_address,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -223,7 +228,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   return cpu->get_bc_pointer();
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "LD BC";
+					   return "LD A,BC";
 				   }},
 	JumpTableEntry{&decrement_16bit_register,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -248,17 +253,22 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   }},
 	JumpTableEntry{&load_immediate_8bit,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
-					   return cpu->get_c_pointer();
+					   auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_c_pointer(), instr_ptr + 1);
+					   return static_cast<void *>(args);
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "LD C";
+					   std::string string = "LD ";
+					   string += "C";
+					   string += ",";
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
+					   return string;
 				   }},
 	JumpTableEntry{&rotate_a_right_with_carry,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
 					   return nullptr;
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "RRCA";
+					   return "RRCA A";
 				   }},
 	JumpTableEntry{&stop,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -310,17 +320,22 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   }},
 	JumpTableEntry{&load_immediate_8bit,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
-					   return cpu->get_d_pointer();
+					   auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_d_pointer(), instr_ptr + 1);
+					   return static_cast<void *>(args);
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "LD D";
+					   std::string string = "LD ";
+					   string += "D";
+					   string += ",";
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
+					   return string;
 				   }},
 	JumpTableEntry{&rotate_a_left,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
 					   return nullptr;
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "RLA";
+					   return "RLA A";
 				   }},
 	JumpTableEntry{&jump_relative_to_immediate,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -343,7 +358,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   return cpu->get_de_pointer();
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "LD DE";
+					   return "LD A,DE";
 				   }},
 	JumpTableEntry{&decrement_16bit_register,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -368,17 +383,22 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   }},
 	JumpTableEntry{&load_immediate_8bit,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
-					   return cpu->get_e_pointer();
+					   auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_e_pointer(), instr_ptr + 1);
+					   return static_cast<void *>(args);
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "LD E";
+					   std::string string = "LD ";
+					   string += "E";
+					   string += ",";
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
+					   return string;
 				   }},
 	JumpTableEntry{&rotate_a_right,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
 					   return nullptr;
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "RRA";
+					   return "RRA A";
 				   }},
 	JumpTableEntry{&jump_relative_to_immediate_conditionally,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -435,10 +455,15 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   }},
 	JumpTableEntry{&load_immediate_8bit,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
-					   return cpu->get_h_pointer();
+					   auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_h_pointer(), instr_ptr + 1);
+					   return static_cast<void *>(args);
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "LD H";
+					   std::string string = "LD ";
+					   string += "H";
+					   string += ",";
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
+					   return string;
 				   }},
 	JumpTableEntry{&decimal_adjust_accumulator,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -496,17 +521,22 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   }},
 	JumpTableEntry{&load_immediate_8bit,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
-					   return cpu->get_l_pointer();
+					   auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_l_pointer(), instr_ptr + 1);
+					   return static_cast<void *>(args);
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "LD L";
+					   std::string string = "LD ";
+					   string += "L";
+					   string += ",";
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
+					   return string;
 				   }},
 	JumpTableEntry{&invert_a,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
 					   return nullptr;
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "CPL";
+					   return "CPL A";
 				   }},
 	JumpTableEntry{&jump_relative_to_immediate_conditionally,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -628,10 +658,15 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   }},
 	JumpTableEntry{&load_immediate_8bit,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
-					   return cpu->get_a_pointer();
+					   auto *args = new std::pair<uint8_t *, uint8_t *>(cpu->get_a_pointer(), instr_ptr + 1);
+					   return static_cast<void *>(args);
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "LD A";
+					   std::string string = "LD ";
+					   string += "A";
+					   string += ",";
+					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
+					   return string;
 				   }},
 	JumpTableEntry{&invert_carry_flag,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -1883,7 +1918,9 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "LDH ";
-					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
+					   string += std::format("[${:02x}]", static_cast<int>(bytes[1]));
+					   string += ",";
+					   string += "A";
 					   return string;
 				   }},
 	JumpTableEntry{&pop_stack_to_16bit_register,
@@ -1898,7 +1935,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   return nullptr;
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "LDH";
+					   return "LDH [C],A";
 				   }},
 	JumpTableEntry{&unsupported_op,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -1945,6 +1982,8 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "ADD ";
+					   string += "SP";
+					   string += ",";
 					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
@@ -1953,7 +1992,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   return nullptr;
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "JP";
+					   return "JP [HL]";
 				   }},
 	JumpTableEntry{&store_a_at_immediate_address,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -1961,7 +2000,9 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "LD ";
-					   string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   string += std::format("[${:04x}]", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   string += ",";
+					   string += "A";
 					   return string;
 				   }},
 	JumpTableEntry{&unsupported_op,
@@ -2009,7 +2050,9 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "LDH ";
-					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
+					   string += "A";
+					   string += ",";
+					   string += std::format("[${:02x}]", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&pop_stack_to_16bit_register,
@@ -2024,7 +2067,7 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   return nullptr;
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "LDH";
+					   return "LDH A,[C]";
 				   }},
 	JumpTableEntry{&disable_interrupts,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -2071,7 +2114,9 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   std::string string = "LD ";
-					   string += std::format("${:02x}", static_cast<int>(bytes[1]));
+					   string += "HL";
+					   string += ",";
+					   string += std::format("SP + {}", static_cast<int>(bytes[1]));
 					   return string;
 				   }},
 	JumpTableEntry{&copy_hl_to_sp,
@@ -2079,14 +2124,18 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					   return nullptr;
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "LD";
+					   return "LD SP,HL";
 				   }},
 	JumpTableEntry{&load_a_from_immediate_address,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
-					   return nullptr;
+					   return reinterpret_cast<uint16_t *>(instr_ptr + 1);
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "LD";
+					   std::string string = "LD ";
+					   string += "A";
+					   string += ",";
+					   string += std::format("[${:04x}]", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
+					   return string;
 				   }},
 	JumpTableEntry{&enable_interrupts,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
@@ -2507,12 +2556,12 @@ constexpr std::array<JumpTableEntry, 256> jump_table_cb = {
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
 					   return "SWAP L";
 				   }},
-	JumpTableEntry{&swap_register_nibbles,
+	JumpTableEntry{&swap_value_at_hl_address_nibbles,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {
 					   return nullptr;
 				   },
 				   [](std::array<uint8_t, 3> bytes) -> const std::string {
-					   return "SWAP";
+					   return "SWAP HL";
 				   }},
 	JumpTableEntry{&swap_register_nibbles,
 				   [](Cpu *cpu, uint8_t *instr_ptr) -> void * {

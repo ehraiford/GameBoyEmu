@@ -9,4 +9,4 @@ mkdir -p ../../build
 cd ../../build 
 cmake --build .
 
-./GameBoyEmu "../roms/boot.bin"
+./GameBoyEmu "../roms/dmg_boot.bin"

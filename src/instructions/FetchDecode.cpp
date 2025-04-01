@@ -29,9 +29,9 @@ void Fetcher::fetch_another_instruction() {
 	FetchedInstruction instruction = FetchedInstruction(bytes);
 	this->instruction_list.push(instruction);
 
-	std::cout << "Was pointing to:" << this->lift_pointer;
+	// std::cout << "Was pointing to:" << this->lift_pointer;
 	this->lift_pointer += instruction.get_instruction_length();
-	std::cout << ". Now pointing to: " << this->lift_pointer << std::endl;
+	// std::cout << ". Now pointing to: " << this->lift_pointer << std::endl;
 }
 
 FetchedInstruction Fetcher::get_next_instruction_to_execute() {
