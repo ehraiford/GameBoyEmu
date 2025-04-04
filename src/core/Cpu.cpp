@@ -119,19 +119,19 @@ uint16_t *Cpu::get_sp_pointer() {
 // LD r8,r8
 void Cpu::copy(void *args) {
 	uint8_t *dest = reinterpret_cast<uint8_t *>(args);
-	uint8_t value = *reinterpret_cast<uint8_t *>(args) + sizeof(uint8_t *);
+	uint8_t value = *(reinterpret_cast<uint8_t *>(args) + sizeof(uint8_t *));
 	*dest = value;
 };
 // LD r8,n8
 void Cpu::load_immediate_8bit(void *args) {
 	uint8_t *dest = reinterpret_cast<uint8_t *>(args);
-	uint8_t value = *reinterpret_cast<uint8_t *>(args) + sizeof(uint8_t *);
+	uint8_t value = *(reinterpret_cast<uint8_t *>(args) + sizeof(uint8_t *));
 	*dest = value;
 };
 // LD r16,n16
 void Cpu::load_immediate_16bit(void *args) {
 	uint16_t *dest = reinterpret_cast<uint16_t *>(args);
-	uint16_t value = *reinterpret_cast<uint16_t *>(args) + sizeof(uint16_t *);
+	uint16_t value = *(reinterpret_cast<uint16_t *>(args) + sizeof(uint16_t *));
 	*dest = value;
 };
 // LD [HL],r8
@@ -507,7 +507,7 @@ void Cpu::xor_a_with_immediate(void *args) {
 // BIT u3,r8
 void Cpu::set_zflag_if_register_bit_not_set(void *args) {
 	uint8_t bit_position = *reinterpret_cast<uint8_t *>(args);
-	uint8_t reg_value = *reinterpret_cast<uint8_t *>(args) + sizeof(uint8_t);
+	uint8_t reg_value = *(reinterpret_cast<uint8_t *>(args) + sizeof(uint8_t));
 	this->set_flag(Flag::Z_FLAG, (reg_value & (1 << bit_position)) == 0);
 
 	this->set_flag(Flag::N_FLAG, false);
@@ -944,7 +944,7 @@ void Cpu::add_sp_to_hl(void *args) {
 };
 // ADD SP,e8
 void Cpu::add_signed_immediate_to_sp(void *args) {
-	int8_t immediate = *reinterpret_cast<uint8_t *>(args);
+	int8_t immediate = *reinterpret_cast<int8_t *>(args);
 	uint16_t result = this->sp + immediate;
 
 	this->set_flags_addition(this->sp, immediate, result);

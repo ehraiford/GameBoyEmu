@@ -12,6 +12,8 @@ add_executable(GameBoyEmu
   ../src/core/Emulator.cpp ../src/core/Emulator.h
   ../src/core/GameBoy.cpp ../src/core/GameBoy.h
   ../src/core/Cpu.cpp ../src/core/Cpu.h 
+  ../src/core/DataBus.cpp ../src/core/DataBus.h
+  ../src/core/Ppu.cpp ../src/core/Ppu.h
   ../src/core/Ram.cpp ../src/core/Ram.h 
   ../src/instructions/Opcodes.cpp ../src/instructions/Opcodes.h 
   ../src/instructions/FetchDecode.cpp ../src/instructions/FetchDecode.h
