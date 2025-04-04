@@ -7,17 +7,15 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 cmake_policy(SET CMP0156 NEW)
 
-add_executable(GameBoyEmu 
-  ../src/main.cpp 
-  ../src/core/Emulator.cpp ../src/core/Emulator.h
-  ../src/core/GameBoy.cpp ../src/core/GameBoy.h
-  ../src/core/Cpu.cpp ../src/core/Cpu.h 
-  ../src/core/DataBus.cpp ../src/core/DataBus.h
-  ../src/core/Ppu.cpp ../src/core/Ppu.h
-  ../src/core/Ram.cpp ../src/core/Ram.h 
-  ../src/instructions/Opcodes.cpp ../src/instructions/Opcodes.h 
-  ../src/instructions/FetchDecode.cpp ../src/instructions/FetchDecode.h
-)
+file(GLOB_RECURSE GAMEBOYEMU_SOURCES "${CMAKE_SOURCE_DIR}/src/*.cpp" "${CMAKE_SOURCE_DIR}/src/*.c")
+
+if(GAMEBOYEMU_SOURCES)
+  add_executable(GameBoyEmu 
+    ${GAMEBOYEMU_SOURCES}
+  )
+else()
+  message(FATAL_ERROR "No source files found in ${CMAKE_SOURCE_DIR}/src")
+endif()
 
 target_include_directories(GameBoyEmu PRIVATE src)
 

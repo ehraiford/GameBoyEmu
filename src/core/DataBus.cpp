@@ -1,9 +1,7 @@
 #include "DataBus.h"
-#include "Ppu.h" // Include the header file for the Ppu class
-
-Cpu *DataBus::get_cpu() {
-	return this->cpu;
-}
+#include "Ppu.h"
+#include "Ram.h"
+#include <iostream>
 
 void DataBus::set_memory(uint16_t address, uint8_t value) {
 	auto device = this->determine_device_from_address(address);
@@ -40,4 +38,30 @@ std::optional<Memory *> DataBus::determine_device_from_address(uint16_t address)
 			return this->get_ppu();
 		}
 	}
+	// TODO any others...
+	return std::nullopt;
 };
+
+std::vector<std::tuple<uint16_t, uint16_t>> DataBus::get_address_ranges() {
+	std::vector<std::tuple<uint16_t, uint16_t>> ranges;
+	auto ram_ranges = this->get_ram()->get_address_ranges();
+	for (auto range : ram_ranges) {
+		ranges.push_back(range);
+	}
+	auto ppu_ranges = this->get_ppu()->get_address_ranges();
+	for (auto range : ppu_ranges) {
+		ranges.push_back(range);
+	}
+	// TODO any others
+	return ranges;
+};
+
+Cpu *DataBus::get_cpu() {
+	return this->cpu;
+}
+Ram *DataBus::get_ram() {
+	return this->ram;
+}
+Ppu *DataBus::get_ppu() {
+	return this->ppu;
+}
