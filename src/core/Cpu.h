@@ -17,6 +17,7 @@ enum Condition : std::uint8_t {
 };
 
 // TODO Check runtime alignment...
+class Ram; // Forward declaration of Ram
 class Cpu {
   private:
 	alignas(uint16_t) uint8_t b;
