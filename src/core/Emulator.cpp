@@ -20,5 +20,5 @@ void Emulator::load_rom(const std::string &file_path) {
 };
 
 Fetcher Emulator::create_instruction_fetcher() {
-	return Fetcher(this->gameboy.get_ram());
+	return Fetcher(this->gameboy.get_rom());
 }

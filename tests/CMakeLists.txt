@@ -11,7 +11,7 @@ add_executable(tests_fetch_decode
     ../src/core/Emulator.cpp ../src/core/Emulator.h
     ../src/core/GameBoy.cpp ../src/core/GameBoy.h
     ../src/core/Cpu.cpp ../src/core/Cpu.h 
-    ../src/core/Ram.cpp ../src/core/Ram.h 
+    ../src/core/Memory.cpp ../src/core/Memory.h 
     ../src/instructions/Opcodes.cpp ../src/instructions/Opcodes.h 
     ../src/instructions/FetchDecode.cpp ../src/instructions/FetchDecode.h
 )

@@ -50,7 +50,9 @@
         "stack": "cpp",
         "variant": "cpp",
         "vector": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "charconv": "cpp",
+        "forward_list": "cpp"
     },
     "cSpell.words": [
         "ctest",

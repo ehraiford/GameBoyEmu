@@ -18,7 +18,7 @@ std::string FetchedInstruction::get_disassembly() {
 	return this->disassembly;
 }
 
-Fetcher::Fetcher(Ram *ram) {
+Fetcher::Fetcher(Rom *ram) {
 	this->ram = ram;
 	this->lift_pointer = 0;
 	instruction_list = std::queue<FetchedInstruction>();

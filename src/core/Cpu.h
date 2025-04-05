@@ -1,6 +1,6 @@
 #ifndef CPU_H
 #define CPU_H
-#include "Ram.h"
+#include "Memory.h"
 #include <iostream>
 
 enum Flag {
@@ -17,7 +17,7 @@ enum Condition : std::uint8_t {
 };
 
 // TODO Check runtime alignment...
-class Ram; // Forward declaration of Ram
+class Rom; // Forward declaration of Rom
 class Cpu {
   private:
 	alignas(uint16_t) uint8_t b;
@@ -31,7 +31,7 @@ class Cpu {
 	uint16_t sp;
 	uint16_t pc;
 	bool interrupts_enabled;
-	Ram *ram;
+	Rom *ram;
 
 	uint16_t get_hl();
 	void set_hl(uint16_t value);

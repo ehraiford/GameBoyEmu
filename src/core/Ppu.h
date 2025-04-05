@@ -7,20 +7,9 @@ class Sprite {
 	uint8_t attributes;
 };
 
-class Oam {
-	Sprite sprites[40] = {};
-};
-
 enum SpriteFlags { Priority = 128, YFlip = 64, XFlip = 32, DmgPalette = 16, Bank = 8, CGBPalette = 0 };
-class Ppu : public Memory {
+class Ppu {
 	DataBus *data_bus;
-	uint8_t vram[0x1800] = {};
-	uint8_t tile_map_0[0x400] = {};
-	uint8_t tile_map_1[0x400] = {};
-	uint8_t oam_dma_register = 0;
-	Oam oam;
-	uint8_t scy;
-	uint8_t scx;
 
   public:
 	void render_frame_buffer();
