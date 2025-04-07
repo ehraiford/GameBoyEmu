@@ -1,4 +1,4 @@
-#include "../src/core/Memory.h"
+#include "../src/executors/Memory.h"
 #include "../src/instructions/FetchDecode.h"
 #include <gtest/gtest.h>
 #include <iostream>
@@ -174,7 +174,7 @@ TEST(FetchDecodeTests, TestDecoding) {
 	}
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
 	::testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();
 }

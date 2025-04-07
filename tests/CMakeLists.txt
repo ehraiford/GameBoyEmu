@@ -8,10 +8,10 @@ include_directories(${GTEST_INCLUDE_DIRS})
 
 add_executable(tests_fetch_decode 
     tests_fetch_decode.cpp
-    ../src/core/Emulator.cpp ../src/core/Emulator.h
-    ../src/core/GameBoy.cpp ../src/core/GameBoy.h
-    ../src/core/Cpu.cpp ../src/core/Cpu.h 
-    ../src/core/Memory.cpp ../src/core/Memory.h 
+    ../src/executors/Emulator.cpp ../src/executors/Emulator.h
+    ../src/executors/GameBoy.cpp ../src/executors/GameBoy.h
+    ../src/executors/Cpu.cpp ../src/executors/Cpu.h 
+    ../src/executors/Memory.cpp ../src/executors/Memory.h 
     ../src/instructions/Opcodes.cpp ../src/instructions/Opcodes.h 
     ../src/instructions/FetchDecode.cpp ../src/instructions/FetchDecode.h
 )

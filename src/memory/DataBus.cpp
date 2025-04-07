@@ -1,6 +1,6 @@
 #include "DataBus.h"
+#include "../executors/Ppu.h"
 #include "Memory.h"
-#include "Ppu.h"
 #include <iostream>
 
 /// @brief This method is for random runtime accesses. It uses the devices' reported ranges to

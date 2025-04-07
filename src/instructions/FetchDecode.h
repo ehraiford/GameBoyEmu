@@ -1,7 +1,7 @@
 #ifndef FETCH_DECODE_H
 #define FETCH_DECODE_H
 
-#include "../core/Memory.h"
+#include "../memory/Memory.h"
 #include "Opcodes.h"
 #include <array>
 #include <queue>
@@ -20,10 +20,10 @@ class FetchedInstruction {
 class Fetcher {
 	std::queue<FetchedInstruction> instruction_list;
 	uint16_t lift_pointer;
-	Rom *ram;
+	Rom* ram;
 
   public:
-	Fetcher(Rom *ram);
+	Fetcher(Rom* ram);
 	void fetch_another_instruction();
 	FetchedInstruction get_next_instruction_to_execute();
 	int get_lift_pointer();

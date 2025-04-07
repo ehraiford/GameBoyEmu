@@ -1,5 +1,5 @@
 #include "../gui/fast_emu_gui/fast_emu_gui.h"
-#include "core/Emulator.h"
+#include "executors/Emulator.h"
 #include "instructions/FetchDecode.h"
 #include "instructions/Opcodes.h"
 #include <fstream>
@@ -8,7 +8,7 @@
 #include <thread>
 #include <vector>
 
-void emulator(const std::string &file_path) {
+void emulator(const std::string& file_path) {
 	Emulator emulator = Emulator();
 
 	emulator.load_rom(file_path);
@@ -22,7 +22,7 @@ void emulator(const std::string &file_path) {
 	}
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
 	if (argc < 2) {
 		std::cerr << "Usage: " << argv[0] << " <path_to_binary_file>" << std::endl;
 		return 1;

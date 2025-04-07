@@ -13,7 +13,7 @@ void Rom::set_memory(uint16_t address, uint8_t value) {
 	this->bank_0[address] = value;
 };
 
-void Rom::load_data(const std::vector<uint8_t> &data) {
+void Rom::load_data(const std::vector<uint8_t>& data) {
 	for (size_t i = 0; i < data.size(); ++i) {
 		this->set_memory(i, data[i]);
 	}
