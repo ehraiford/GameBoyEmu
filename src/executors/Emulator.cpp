@@ -2,15 +2,15 @@
 #include "../instructions/FetchDecode.h"
 
 Emulator::Emulator() : gameboy() {};
-Emulator::Emulator(const std::string &file_path) : gameboy() {
+Emulator::Emulator(const std::string& file_path) : gameboy() {
 	this->load_rom(file_path);
 }
 
-void Emulator::load_rom(const std::string &file_path) {
+void Emulator::load_rom(const std::string& file_path) {
 
 	std::ifstream file(file_path, std::ios::binary);
 	if (!file.is_open()) {
-		std::cerr << "Failed to open binary file: " << file_path << std::endl;
+		std::cout << "Failed to open binary file: " << file_path << std::endl;
 		return;
 	}
 

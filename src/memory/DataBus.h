@@ -16,9 +16,13 @@ class DataBus {
 	IORegisters* io_registers;
 	HighRam* high_ram;
 
-	Memory* determine_device_from_address(uint16_t address);
+	std::tuple<Memory*, uint16_t> determine_device_from_address(uint16_t address);
 
   public:
+	DataBus(Rom* rom, VideoRam* video_ram, ExternalRam* external_ram, WorkRam* work_ram,
+			ObjectAttributeMemory* object_attribute_memory, IORegisters* io_registers, HighRam* high_ram)
+		: rom(rom), video_ram(video_ram), external_ram(external_ram), work_ram(work_ram),
+		  object_attribute_memory(object_attribute_memory), io_registers(io_registers), high_ram(high_ram) {};
 	Rom* get_rom();
 	void set_memory(uint16_t address, uint8_t value);
 	uint8_t get_memory(uint16_t address);

@@ -9,8 +9,8 @@
 /// @param address
 /// @param value
 void DataBus::set_memory(uint16_t address, uint8_t value) {
-	auto device = this->determine_device_from_address(address);
-	device->set_memory(address, value);
+	auto [device, offset] = this->determine_device_from_address(address);
+	device->set_memory(address - offset, value);
 };
 
 /// @brief This method is for random runtime accesses. It uses the devices' reported ranges to
@@ -18,31 +18,31 @@ void DataBus::set_memory(uint16_t address, uint8_t value) {
 /// should use a separate dedicated function.
 /// @param address
 uint8_t DataBus::get_memory(uint16_t address) {
-	auto device = this->determine_device_from_address(address);
-	return device->get_memory(address);
+	auto [device, offset] = this->determine_device_from_address(address);
+	return device->get_memory(address - offset);
 }
 
-Memory* DataBus::determine_device_from_address(uint16_t address) {
+std::tuple<Memory*, uint16_t> DataBus::determine_device_from_address(uint16_t address) {
 	switch (address) {
 	case 0x0000 ... 0x7FFF:
-		return this->rom;
+		return std::make_tuple(this->rom, 0);
 	case 0x8000 ... 0x9FFF:
-		return this->video_ram;
+		return std::make_tuple(this->video_ram, 0x8000);
 	case 0xA000 ... 0xBFFF:
-		return this->external_ram;
+		return std::make_tuple(this->external_ram, 0xA000);
 	case 0xC000 ... 0xFDFF:
-		return this->work_ram;
+		return std::make_tuple(this->work_ram, 0xC000);
 	case 0xFE00 ... 0xFE9F:
-		return this->object_attribute_memory;
+		return std::make_tuple(this->object_attribute_memory, 0xFE00);
 	case 0xFEA0 ... 0xFEFF:
-		// Need to figure out what to do with prohibited memory
-		return nullptr;
+		// TODO: Figure out what to do with prohibited memory
+		return std::make_tuple(nullptr, 0);
 	case 0xFF00 ... 0xFF7F:
-		return this->io_registers;
+		return std::make_tuple(this->io_registers, 0xFF00);
 	case 0xFF80 ... 0xFFFE:
-		return this->high_ram;
+		return std::make_tuple(this->high_ram, 0xFF80);
 	case 0xFFFF:
-		return this->io_registers;
+		return std::make_tuple(this->io_registers, 0xFFFF);
 	}
 };
 Rom* DataBus::get_rom() {

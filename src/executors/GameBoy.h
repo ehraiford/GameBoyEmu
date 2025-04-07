@@ -1,12 +1,32 @@
+#include "../memory/DataBus.h"
+#include "../memory/Memory.h"
 #include "Cpu.h"
-#include "Memory.h"
 class GameBoy {
 	Cpu cpu;
-	Rom ram;
+	DataBus data_bus;
+	Rom rom;
+	VideoRam video_ram;
+	ExternalRam external_ram;
+	WorkRam work_ram;
+	ObjectAttributeMemory object_attribute_memory;
+	IORegisters io_registers;
+	HighRam high_ram;
+
+	void tick();
 
   public:
-	GameBoy() : cpu(), ram() {};
+	GameBoy()
+		: cpu(),
+		  data_bus(&rom, &video_ram, &external_ram, &work_ram, &object_attribute_memory, &io_registers, &high_ram),
+		  rom(), video_ram(), external_ram(), work_ram(), object_attribute_memory(), io_registers(), high_ram() {};
 
 	void load_buffer_as_cartridge(std::vector<uint8_t> data);
-	Rom *get_rom();
+	Rom* get_rom();
+};
+
+enum EmulatorState {
+	STOPPED,
+	RUNNING,
+	PAUSED,
+	RESET,
 };

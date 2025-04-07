@@ -65,11 +65,21 @@ class ObjectAttributeMemory : public Memory {
 class IORegisters : public Memory {
   private:
 	uint8_t memory[0x80] = {};
+
+  public:
+	uint8_t get_memory(uint16_t address) override;
+	std::array<uint8_t, 3> get_instruction(uint16_t address);
+	void set_memory(uint16_t address, uint8_t value) override;
 };
 
 class HighRam : public Memory {
   private:
 	uint8_t memory[0x7F] = {};
+
+  public:
+	uint8_t get_memory(uint16_t address) override;
+	std::array<uint8_t, 3> get_instruction(uint16_t address);
+	void set_memory(uint16_t address, uint8_t value) override;
 };
 
 #endif
