@@ -1,6 +1,6 @@
 #ifndef CPU_H
 #define CPU_H
-#include "../memory/Memory.h"
+#include "../memory/DataBus.h"
 #include <iostream>
 
 enum Flag {
@@ -31,7 +31,7 @@ class Cpu {
 	uint16_t sp;
 	uint16_t pc;
 	bool interrupts_enabled;
-	Rom* ram;
+	DataBus* databus;
 
 	uint16_t get_hl();
 	void set_hl(uint16_t value);

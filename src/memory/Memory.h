@@ -7,6 +7,7 @@
 struct Memory {
 	virtual void set_memory(uint16_t address, uint8_t value) = 0;
 	virtual uint8_t get_memory(uint16_t address) = 0;
+	std::array<uint8_t, 3> get_instruction(uint16_t address);
 };
 
 class Rom : public Memory {

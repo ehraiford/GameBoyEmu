@@ -3,23 +3,22 @@
 #include "Memory.h"
 #include <iostream>
 
-/// @brief This method is for random runtime accesses. It uses the devices' reported ranges to
-/// Any access whose address is known at compile time, (like DMA or checking an IO register),
-/// should use a separate dedicated function.
-/// @param address
-/// @param value
 void DataBus::set_memory(uint16_t address, uint8_t value) {
 	auto [device, offset] = this->determine_device_from_address(address);
 	device->set_memory(address - offset, value);
 };
 
-/// @brief This method is for random runtime accesses. It uses the devices' reported ranges to
-/// Any access whose address is known at compile time, (like DMA or checking an IO register),
-/// should use a separate dedicated function.
-/// @param address
 uint8_t DataBus::get_memory(uint16_t address) {
 	auto [device, offset] = this->determine_device_from_address(address);
 	return device->get_memory(address - offset);
+}
+
+std::array<uint8_t, 3> DataBus::get_instruction(uint16_t address) {
+	std::array<uint8_t, 3> instruction = {0, 0, 0};
+	instruction[0] = this->get_memory(address);
+	instruction[1] = this->get_memory(address + 1);
+	instruction[2] = this->get_memory(address + 2);
+	return instruction;
 }
 
 std::tuple<Memory*, uint16_t> DataBus::determine_device_from_address(uint16_t address) {
@@ -45,10 +44,6 @@ std::tuple<Memory*, uint16_t> DataBus::determine_device_from_address(uint16_t ad
 		return std::make_tuple(this->io_registers, 0xFFFF);
 	}
 };
-Rom* DataBus::get_rom() {
+Rom* DataBus::get_databus() {
 	return this->rom;
 }
-
-std::array<uint8_t, 0xA0> DataBus::get_dma_oam_data(uint16_t starting_address) {
-
-};

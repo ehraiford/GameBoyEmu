@@ -15,15 +15,15 @@ bool Cpu::get_flag(Flag flag) {
 
 void Cpu::push_to_stack(uint16_t value) {
 	this->sp -= 1;
-	this->ram->set_memory(this->sp, value >> 8);
+	this->databus->set_memory(this->sp, value >> 8);
 	this->sp -= 1;
-	this->ram->set_memory(this->sp, value);
+	this->databus->set_memory(this->sp, value);
 };
 uint16_t Cpu::pop_from_stack() {
-	uint16_t value = this->ram->get_memory(this->sp);
+	uint16_t value = this->databus->get_memory(this->sp);
 	this->sp += 1;
 	value <<= 8;
-	value |= this->ram->get_memory(this->sp);
+	value |= this->databus->get_memory(this->sp);
 	this->sp += 1;
 	return value;
 }
@@ -137,60 +137,60 @@ void Cpu::load_immediate_16bit(void* args) {
 // LD [HL],r8
 void Cpu::store_at_hl_address(void* args) {
 	uint8_t value = *reinterpret_cast<uint8_t*>(args);
-	this->ram->set_memory(this->get_hl(), value);
+	this->databus->set_memory(this->get_hl(), value);
 };
 // LD [HL],n8
 void Cpu::store_immediate_at_hl_address(void* args) {
 	uint8_t value = *reinterpret_cast<uint8_t*>(args);
-	this->ram->set_memory(this->get_hl(), value);
+	this->databus->set_memory(this->get_hl(), value);
 };
 // LD r8,[HL]
 void Cpu::load_from_hl_address(void* args) {
 	uint8_t* dest = reinterpret_cast<uint8_t*>(args);
-	*dest = this->ram->get_memory(this->get_hl());
+	*dest = this->databus->get_memory(this->get_hl());
 };
 // LD [r16],A
 void Cpu::store_a_at_register_address(void* args) {
 	uint16_t address = *reinterpret_cast<uint16_t*>(args);
-	this->ram->set_memory(address, this->a);
+	this->databus->set_memory(address, this->a);
 };
 // LD [n16],A
 void Cpu::store_a_at_immediate_address(void* args) {
 	uint16_t address = *reinterpret_cast<uint16_t*>(args);
-	this->ram->set_memory(address, this->a);
+	this->databus->set_memory(address, this->a);
 };
 // LDH [n16],A
 void Cpu::store_a_at_immediate_hardware_address(void* args) {
 	uint8_t addr_low = *reinterpret_cast<uint8_t*>(args);
-	this->ram->set_memory(0xFF00 | addr_low, this->a);
+	this->databus->set_memory(0xFF00 | addr_low, this->a);
 };
 // LDH [C],A
 void Cpu::store_a_at_hardware_address_offset_by_c(void* args) {
-	this->ram->set_memory(0xFF00 | this->c, this->a);
+	this->databus->set_memory(0xFF00 | this->c, this->a);
 };
 // LD A,[r16]
 void Cpu::load_a_from_register_address(void* args) {
 	uint16_t address = *reinterpret_cast<uint16_t*>(args);
-	this->a = this->ram->get_memory(address);
+	this->a = this->databus->get_memory(address);
 };
 // LD A,[r16]
 void Cpu::load_a_from_immediate_address(void* args) {
 	uint16_t address = *reinterpret_cast<uint16_t*>(args);
-	this->a = this->ram->get_memory(address);
+	this->a = this->databus->get_memory(address);
 };
 // LDH A,[n16]
 void Cpu::load_a_from_immediate_hardware_address(void* args) {
 	uint8_t* addr_low = reinterpret_cast<uint8_t*>(args);
-	this->a = this->ram->get_memory(0xFF00 | *addr_low);
+	this->a = this->databus->get_memory(0xFF00 | *addr_low);
 };
 // LDH A,[C]
 void Cpu::load_a_from_hardware_address_offset_by_c(void* args) {
-	this->a = this->ram->get_memory(0xFF00 | this->c);
+	this->a = this->databus->get_memory(0xFF00 | this->c);
 };
 // LD [HLI],A
 void Cpu::store_a_at_hl_address_increment(void* args) {
 	uint16_t hl = this->get_hl();
-	this->ram->set_memory(hl, this->a);
+	this->databus->set_memory(hl, this->a);
 	hl++;
 	this->h = hl >> 8;
 	this->l = hl;
@@ -198,7 +198,7 @@ void Cpu::store_a_at_hl_address_increment(void* args) {
 // LD [HLD],A
 void Cpu::store_a_at_hl_address_decrement(void* args) {
 	uint16_t hl = this->get_hl();
-	this->ram->set_memory(hl, this->a);
+	this->databus->set_memory(hl, this->a);
 	hl--;
 	this->h = hl >> 8;
 	this->l = hl;
@@ -206,7 +206,7 @@ void Cpu::store_a_at_hl_address_decrement(void* args) {
 // LD A,[HLI]
 void Cpu::load_a_from_hl_address_increment(void* args) {
 	uint16_t hl = this->get_hl();
-	this->a = this->ram->get_memory(hl);
+	this->a = this->databus->get_memory(hl);
 	hl++;
 	this->h = hl >> 8;
 	this->l = hl;
@@ -214,7 +214,7 @@ void Cpu::load_a_from_hl_address_increment(void* args) {
 // LD A,[HLD]
 void Cpu::load_a_from_hl_address_decrement(void* args) {
 	uint16_t hl = this->get_hl();
-	this->a = this->ram->get_memory(hl);
+	this->a = this->databus->get_memory(hl);
 	hl--;
 	this->h = hl >> 8;
 	this->l = hl;
@@ -232,7 +232,7 @@ void Cpu::add_with_carry_register_to_a(void* args) {
 
 // ADC A,[HL]
 void Cpu::add_with_carry_from_hl_address_to_a(void* args) {
-	uint8_t value = this->ram->get_memory(this->get_hl());
+	uint8_t value = this->databus->get_memory(this->get_hl());
 	uint16_t result = this->a + value;
 
 	this->set_flags_addition(this->a, value, result);
@@ -258,7 +258,7 @@ void Cpu::add_register_to_a(void* args) {
 };
 // ADD A,[HL]
 void Cpu::add_value_at_hl_address_to_a(void* args) {
-	uint8_t value = this->ram->get_memory(this->get_hl());
+	uint8_t value = this->databus->get_memory(this->get_hl());
 	uint16_t result = this->a + value;
 
 	this->set_flags_addition(this->a, value, result);
@@ -281,7 +281,7 @@ void Cpu::compare_a_with_register(void* args) {
 };
 // CP A,[HL]
 void Cpu::compare_a_with_value_at_hl_address(void* args) {
-	uint8_t value = this->ram->get_memory((this->h << 8) | this->l);
+	uint8_t value = this->databus->get_memory((this->h << 8) | this->l);
 	uint8_t result = this->a - value;
 
 	this->set_flags_subtraction(this->a, value, result);
@@ -305,13 +305,13 @@ void Cpu::decrement_register(void* args) {
 };
 // DEC [HL]
 void Cpu::decrement_value_at_hl_address(void* args) {
-	uint8_t value = this->ram->get_memory(this->get_hl());
+	uint8_t value = this->databus->get_memory(this->get_hl());
 	uint8_t result = value - 1;
 
 	this->set_flag(Flag::Z_FLAG, result == 0);
 	this->set_flag(Flag::N_FLAG, true);
 	this->set_flag(Flag::H_FLAG, (value & 0x0F) == 0);
-	this->ram->set_memory(this->get_hl(), result);
+	this->databus->set_memory(this->get_hl(), result);
 };
 // INC r8
 void Cpu::increment_register(void* args) {
@@ -325,13 +325,13 @@ void Cpu::increment_register(void* args) {
 };
 // INC [HL]
 void Cpu::increment_value_at_hl_address(void* args) {
-	uint8_t value = this->ram->get_memory(this->get_hl());
+	uint8_t value = this->databus->get_memory(this->get_hl());
 	uint8_t result = value + 1;
 
 	this->set_flag(Flag::Z_FLAG, result == 0);
 	this->set_flag(Flag::N_FLAG, true);
 	this->set_flag(Flag::H_FLAG, (value & 0x0F) == 0x0F);
-	this->ram->set_memory(this->get_hl(), result);
+	this->databus->set_memory(this->get_hl(), result);
 };
 // SBC A,r8
 void Cpu::subtract_with_carry_register_from_a(void* args) {
@@ -343,7 +343,7 @@ void Cpu::subtract_with_carry_register_from_a(void* args) {
 };
 // SBC A,[HL]
 void Cpu::subtract_with_carry_value_at_hl_address_from_a(void* args) {
-	uint8_t value = this->ram->get_memory(this->get_hl()) + ((this->get_flag(Flag::C_FLAG) << 8));
+	uint8_t value = this->databus->get_memory(this->get_hl()) + ((this->get_flag(Flag::C_FLAG) << 8));
 	uint8_t result = this->a - value;
 
 	this->set_flags_subtraction(this->a, value, result);
@@ -367,7 +367,7 @@ void Cpu::subtract_register_from_a(void* args) {
 };
 // SUB A,[HL]
 void Cpu::subtract_value_at_hl_address_from_a(void* args) {
-	uint8_t value = this->ram->get_memory(this->get_hl());
+	uint8_t value = this->databus->get_memory(this->get_hl());
 	uint8_t result = this->a - value;
 
 	this->set_flags_subtraction(this->a, value, result);
@@ -417,7 +417,7 @@ void Cpu::and_a_with_register(void* args) {
 };
 // AND A,[HL]
 void Cpu::and_a_with_value_at_hl_address(void* args) {
-	uint8_t value = this->ram->get_memory(this->get_hl());
+	uint8_t value = this->databus->get_memory(this->get_hl());
 	this->a &= value;
 
 	this->set_flag(Flag::Z_FLAG, this->a == 0);
@@ -454,7 +454,7 @@ void Cpu::or_a_with_register(void* args) {
 };
 // OR A,[HL]
 void Cpu::or_a_with_value_at_hl_address(void* args) {
-	uint8_t value = this->ram->get_memory(this->get_hl());
+	uint8_t value = this->databus->get_memory(this->get_hl());
 	this->a |= value;
 
 	this->set_flag(Flag::Z_FLAG, this->a == 0);
@@ -484,7 +484,7 @@ void Cpu::xor_a_with_register(void* args) {
 };
 // XOR A,[HL]
 void Cpu::xor_a_with_value_at_hl_address(void* args) {
-	uint8_t value = this->ram->get_memory(this->get_hl());
+	uint8_t value = this->databus->get_memory(this->get_hl());
 	this->a ^= value;
 
 	this->set_flag(Flag::Z_FLAG, this->a == 0);
@@ -516,7 +516,7 @@ void Cpu::set_zflag_if_register_bit_not_set(void* args) {
 // BIT u3,[HL]
 void Cpu::set_zflag_if_value_at_hl_address_bit_not_set(void* args) {
 	uint8_t bit_position = *reinterpret_cast<uint8_t*>(args);
-	uint8_t value = this->ram->get_memory(this->get_hl());
+	uint8_t value = this->databus->get_memory(this->get_hl());
 
 	this->set_flag(Flag::Z_FLAG, (value & (1 << bit_position)) == 0);
 	this->set_flag(Flag::N_FLAG, false);
@@ -531,9 +531,9 @@ void Cpu::clear_register_bit(void* args) {
 // RES u3,[HL]
 void Cpu::clear_value_at_hl_address_bit(void* args) {
 	uint8_t bit_position = *reinterpret_cast<uint8_t*>(args);
-	uint8_t value = this->ram->get_memory(this->get_hl());
+	uint8_t value = this->databus->get_memory(this->get_hl());
 	value &= ~(1 << bit_position);
-	this->ram->set_memory(this->get_hl(), value);
+	this->databus->set_memory(this->get_hl(), value);
 };
 // SET u3,r8
 void Cpu::set_register_bit(void* args) {
@@ -544,9 +544,9 @@ void Cpu::set_register_bit(void* args) {
 // SET u3,[HL]
 void Cpu::set_value_at_hl_address_bit(void* args) {
 	uint8_t bit_position = *reinterpret_cast<uint8_t*>(args);
-	uint8_t value = this->ram->get_memory(this->get_hl());
+	uint8_t value = this->databus->get_memory(this->get_hl());
 	value |= 1 << bit_position;
-	this->ram->set_memory(this->get_hl(), value);
+	this->databus->set_memory(this->get_hl(), value);
 };
 
 // Bit shift instructions
@@ -568,7 +568,7 @@ void Cpu::rotate_register_left(void* args) {
 };
 // RL [HL]
 void Cpu::rotate_value_at_hl_address_left(void* args) {
-	uint8_t value = this->ram->get_memory(this->get_hl());
+	uint8_t value = this->databus->get_memory(this->get_hl());
 	bool new_carry = value & 0b10000000;
 
 	value <<= 1;
@@ -579,7 +579,7 @@ void Cpu::rotate_value_at_hl_address_left(void* args) {
 	this->set_flag(Flag::N_FLAG, false);
 	this->set_flag(Flag::H_FLAG, false);
 	this->set_flag(Flag::C_FLAG, new_carry);
-	this->ram->set_memory(this->get_hl(), value);
+	this->databus->set_memory(this->get_hl(), value);
 };
 // RLA
 void Cpu::rotate_a_left(void* args) {
@@ -614,7 +614,7 @@ void Cpu::rotate_register_left_with_carry(void* args) {
 };
 // RLC [HL]
 void Cpu::rotate_value_at_hl_address_left_with_carry(void* args) {
-	uint8_t value = this->ram->get_memory(this->get_hl());
+	uint8_t value = this->databus->get_memory(this->get_hl());
 	bool new_carry = value & 0b10000000;
 
 	value <<= 1;
@@ -625,7 +625,7 @@ void Cpu::rotate_value_at_hl_address_left_with_carry(void* args) {
 	this->set_flag(Flag::N_FLAG, false);
 	this->set_flag(Flag::H_FLAG, false);
 	this->set_flag(Flag::C_FLAG, new_carry);
-	this->ram->set_memory(this->get_hl(), value);
+	this->databus->set_memory(this->get_hl(), value);
 };
 // RLCA
 void Cpu::rotate_a_left_with_carry(void* args) {
@@ -660,7 +660,7 @@ void Cpu::rotate_register_right(void* args) {
 };
 // RR [HL]
 void Cpu::rotate_value_at_hl_address_right(void* args) {
-	uint8_t value = this->ram->get_memory(this->get_hl());
+	uint8_t value = this->databus->get_memory(this->get_hl());
 	bool new_carry = value & 0b1;
 
 	value >>= 1;
@@ -671,7 +671,7 @@ void Cpu::rotate_value_at_hl_address_right(void* args) {
 	this->set_flag(Flag::N_FLAG, false);
 	this->set_flag(Flag::H_FLAG, false);
 	this->set_flag(Flag::C_FLAG, new_carry);
-	this->ram->set_memory(this->get_hl(), value);
+	this->databus->set_memory(this->get_hl(), value);
 };
 // RRA
 void Cpu::rotate_a_right(void* args) {
@@ -706,7 +706,7 @@ void Cpu::rotate_register_right_with_carry(void* args) {
 };
 // RRC [HL]
 void Cpu::rotate_value_at_hl_address_right_with_carry(void* args) {
-	uint8_t value = this->ram->get_memory(this->get_hl());
+	uint8_t value = this->databus->get_memory(this->get_hl());
 	bool new_carry = value & 0b1;
 
 	value >>= 1;
@@ -717,7 +717,7 @@ void Cpu::rotate_value_at_hl_address_right_with_carry(void* args) {
 	this->set_flag(Flag::N_FLAG, false);
 	this->set_flag(Flag::H_FLAG, false);
 	this->set_flag(Flag::C_FLAG, new_carry);
-	this->ram->set_memory(this->get_hl(), value);
+	this->databus->set_memory(this->get_hl(), value);
 };
 // RRCA
 void Cpu::rotate_a_right_with_carry(void* args) {
@@ -750,7 +750,7 @@ void Cpu::shift_register_left_arithmetically(void* args) {
 };
 // SLA [HL]
 void Cpu::shift_value_at_hl_address_left_arithmetically(void* args) {
-	uint8_t value = this->ram->get_memory(this->get_hl());
+	uint8_t value = this->databus->get_memory(this->get_hl());
 
 	bool new_carry = value & 0b10000000;
 	value <<= 1;
@@ -759,7 +759,7 @@ void Cpu::shift_value_at_hl_address_left_arithmetically(void* args) {
 	this->set_flag(Flag::N_FLAG, false);
 	this->set_flag(Flag::H_FLAG, false);
 	this->set_flag(Flag::C_FLAG, new_carry);
-	this->ram->set_memory(this->get_hl(), value);
+	this->databus->set_memory(this->get_hl(), value);
 };
 // SRA r8
 void Cpu::shift_register_right_arithmetically(void* args) {
@@ -777,7 +777,7 @@ void Cpu::shift_register_right_arithmetically(void* args) {
 };
 // SRA [HL]
 void Cpu::shift_value_at_hl_address_right_arithmetically(void* args) {
-	int8_t value = this->ram->get_memory(this->get_hl());
+	int8_t value = this->databus->get_memory(this->get_hl());
 
 	bool new_carry = value & 0b1;
 	value >>= 1;
@@ -786,7 +786,7 @@ void Cpu::shift_value_at_hl_address_right_arithmetically(void* args) {
 	this->set_flag(Flag::N_FLAG, false);
 	this->set_flag(Flag::H_FLAG, false);
 	this->set_flag(Flag::C_FLAG, new_carry);
-	this->ram->set_memory(this->get_hl(), value);
+	this->databus->set_memory(this->get_hl(), value);
 };
 // SRL r8
 void Cpu::shift_register_right_logically(void* args) {
@@ -804,7 +804,7 @@ void Cpu::shift_register_right_logically(void* args) {
 };
 // SRL [HL]
 void Cpu::shift_value_at_hl_address_right_logically(void* args) {
-	uint8_t value = this->ram->get_memory(this->get_hl());
+	uint8_t value = this->databus->get_memory(this->get_hl());
 
 	bool new_carry = value & 0b1;
 	value >>= 1;
@@ -813,7 +813,7 @@ void Cpu::shift_value_at_hl_address_right_logically(void* args) {
 	this->set_flag(Flag::N_FLAG, false);
 	this->set_flag(Flag::H_FLAG, false);
 	this->set_flag(Flag::C_FLAG, new_carry);
-	this->ram->set_memory(this->get_hl(), value);
+	this->databus->set_memory(this->get_hl(), value);
 };
 // SWAP r8
 void Cpu::swap_register_nibbles(void* args) {
@@ -829,7 +829,7 @@ void Cpu::swap_register_nibbles(void* args) {
 };
 // SWAP [HL]
 void Cpu::swap_value_at_hl_address_nibbles(void* args) {
-	uint8_t value = this->ram->get_memory(this->get_hl());
+	uint8_t value = this->databus->get_memory(this->get_hl());
 
 	value = (value << 4) | (value >> 4);
 
@@ -837,7 +837,7 @@ void Cpu::swap_value_at_hl_address_nibbles(void* args) {
 	this->set_flag(Flag::N_FLAG, 0);
 	this->set_flag(Flag::H_FLAG, 0);
 	this->set_flag(Flag::C_FLAG, 0);
-	this->ram->set_memory(this->get_hl(), value);
+	this->databus->set_memory(this->get_hl(), value);
 };
 
 // Jump and Subroutine instructions
@@ -966,8 +966,8 @@ void Cpu::load_sp_from_immediate_16bit(void* args) {
 // LD [n16],SP
 void Cpu::store_sp_at_immediate_address(void* args) {
 	uint16_t address = *reinterpret_cast<uint16_t*>(args);
-	this->ram->set_memory(address, this->sp);
-	this->ram->set_memory(address + 1, this->sp >> 8);
+	this->databus->set_memory(address, this->sp);
+	this->databus->set_memory(address + 1, this->sp >> 8);
 };
 // LD HL,SP+e8
 void Cpu::load_hl_from_sp_plus_signed_immediate(void* args) {

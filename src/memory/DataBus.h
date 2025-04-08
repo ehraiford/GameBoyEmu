@@ -7,7 +7,7 @@
 #include <tuple>
 #include <vector>
 
-class DataBus {
+class DataBus : public Memory {
 	Rom* rom;
 	VideoRam* video_ram;
 	ExternalRam* external_ram;
@@ -23,10 +23,10 @@ class DataBus {
 			ObjectAttributeMemory* object_attribute_memory, IORegisters* io_registers, HighRam* high_ram)
 		: rom(rom), video_ram(video_ram), external_ram(external_ram), work_ram(work_ram),
 		  object_attribute_memory(object_attribute_memory), io_registers(io_registers), high_ram(high_ram) {};
-	Rom* get_rom();
+	Rom* get_databus();
 	void set_memory(uint16_t address, uint8_t value);
 	uint8_t get_memory(uint16_t address);
-	std::array<uint8_t, 0xA0> get_dma_oam_data(uint16_t starting_address);
+	std::array<uint8_t, 3> get_instruction(uint16_t address);
 };
 
 #endif // DATABUS_H

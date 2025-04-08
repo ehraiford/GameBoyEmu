@@ -21,7 +21,7 @@ class GameBoy {
 		  rom(), video_ram(), external_ram(), work_ram(), object_attribute_memory(), io_registers(), high_ram() {};
 
 	void load_buffer_as_cartridge(std::vector<uint8_t> data);
-	Rom* get_rom();
+	DataBus* get_databus();
 };
 
 enum EmulatorState {

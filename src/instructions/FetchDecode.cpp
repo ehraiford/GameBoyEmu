@@ -18,14 +18,14 @@ std::string FetchedInstruction::get_disassembly() {
 	return this->disassembly;
 }
 
-Fetcher::Fetcher(Rom *ram) {
-	this->ram = ram;
+Fetcher::Fetcher(DataBus* databus) {
+	this->databus = databus;
 	this->lift_pointer = 0;
 	instruction_list = std::queue<FetchedInstruction>();
 }
 
 void Fetcher::fetch_another_instruction() {
-	std::array<uint8_t, 3> bytes = this->ram->get_instruction(this->lift_pointer);
+	std::array<uint8_t, 3> bytes = this->databus->get_instruction(this->lift_pointer);
 	FetchedInstruction instruction = FetchedInstruction(bytes);
 	this->instruction_list.push(instruction);
 

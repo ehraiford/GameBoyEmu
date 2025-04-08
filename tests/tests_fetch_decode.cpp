@@ -1,11 +1,11 @@
-#include "../src/executors/Memory.h"
 #include "../src/instructions/FetchDecode.h"
+#include "../src/memory/DataBus.h"
+#include "../src/memory/Memory.h"
 #include <gtest/gtest.h>
 #include <iostream>
 #include <vector>
 
 TEST(FetchDecodeTests, TestDecoding) {
-	Rom ram = Rom();
 	std::vector<uint8_t> data = {
 		0x31, 0xfe, 0xff, 0xaf, 0x21, 0xff, 0x9f, 0x32, 0xcb, 0x7c, 0x20, 0xfb, 0x21, 0x26, 0xff, 0x0e, 0x11, 0x3e,
 		0x80, 0x32, 0xe2, 0x0c, 0x3e, 0xf3, 0xe2, 0x32, 0x3e, 0x77, 0x77, 0x3e, 0xfc, 0xe0, 0x47, 0x11, 0x04, 0x01,
@@ -23,8 +23,10 @@ TEST(FetchDecodeTests, TestDecoding) {
 		0xfe, 0x23, 0x7d, 0xfe, 0x34, 0x20, 0xf5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xfb, 0x86, 0x20, 0xfe,
 		0x3e, 0x01, 0xe0, 0x50,
 	};
-	ram.load_data(data);
-	Fetcher fetcher = Fetcher(&ram);
+	Rom rom = Rom();
+	rom.load_data(data);
+	DataBus databus = DataBus(&rom, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+	Fetcher fetcher = Fetcher(&databus);
 
 	std::vector<std::tuple<std::string, uint8_t>> expected_disassemblies = {
 		{"LD SP,$fffe", 0x00},
@@ -154,7 +156,7 @@ TEST(FetchDecodeTests, TestDecoding) {
 	for (int i = 0; i < 101; i++) {
 		int address = fetcher.get_lift_pointer();
 		FetchedInstruction instruction = fetcher.get_next_instruction_to_execute();
-		std::array<uint8_t, 3> bytes = ram.get_instruction(address);
+		std::array<uint8_t, 3> bytes = databus.get_instruction(address);
 		std::cout << instruction.get_disassembly() << ": ";
 		for (int j = 0; j < 3; j++) {
 			std::cout << std::format("0b{:08b}, ", bytes[j]);
@@ -168,7 +170,7 @@ TEST(FetchDecodeTests, TestDecoding) {
 	for (int i = 0; i < 20; i++) {
 		int address = fetcher.get_lift_pointer();
 		FetchedInstruction instruction = fetcher.get_next_instruction_to_execute();
-		std::array<uint8_t, 3> bytes = ram.get_instruction(address);
+		std::array<uint8_t, 3> bytes = databus.get_instruction(address);
 		ASSERT_EQ(instruction.get_disassembly(), std::get<0>(expected_disassemblies[i + 101]));
 		ASSERT_EQ(address, std::get<1>(expected_disassemblies[i + 101]));
 	}
