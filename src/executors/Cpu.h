@@ -16,10 +16,17 @@ enum Condition : std::uint8_t {
 	C = 3,
 };
 
+enum CpuState {
+	RUNNING,
+	STOPPED,
+	HALTED,
+};
+
 // TODO Check runtime alignment...
 class Rom; // Forward declaration of Rom
 class Cpu {
   private:
+	CpuState state;
 	alignas(uint16_t) uint8_t b;
 	uint8_t c;
 	alignas(uint16_t) uint8_t d;
@@ -46,7 +53,21 @@ class Cpu {
 	bool condition_is_met(Condition condition);
 
   public:
-	Cpu();
+	Cpu(DataBus* databus) {
+		this->databus = databus;
+		this->state = RUNNING;
+		this->a = 0;
+		this->b = 0;
+		this->c = 0;
+		this->d = 0;
+		this->e = 0;
+		this->f = 0;
+		this->h = 0;
+		this->l = 0;
+		this->sp = 0;
+		this->pc = 0;
+		this->interrupts_enabled = false;
+	};
 	~Cpu();
 
 	uint8_t* get_b_pointer();
