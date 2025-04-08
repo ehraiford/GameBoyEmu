@@ -1,6 +1,4 @@
 #pragma once
-#ifndef MEMORY_H
-#define MEMORY_H
 #include <iostream>
 #include <vector>
 
@@ -82,5 +80,3 @@ class HighRam : public Memory {
 	std::array<uint8_t, 3> get_instruction(uint16_t address);
 	void set_memory(uint16_t address, uint8_t value) override;
 };
-
-#endif

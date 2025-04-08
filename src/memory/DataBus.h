@@ -1,6 +1,4 @@
-#ifndef DATABUS_H
-#define DATABUS_H
-
+#pragma once
 #include "Memory.h"
 #include <array>
 #include <cstdint>
@@ -28,5 +26,3 @@ class DataBus : public Memory {
 	uint8_t get_memory(uint16_t address);
 	std::array<uint8_t, 3> get_instruction(uint16_t address);
 };
-
-#endif // DATABUS_H

@@ -1,5 +1,4 @@
-#ifndef OPCODES_H
-#define OPCODES_H
+#pragma once
 #include "../executors/Cpu.h"
 #include <array>
 
@@ -4139,5 +4138,3 @@ constexpr std::array<JumpTableEntry, 256> jump_table_cb = {
 					   return "SET 7,A";
 				   }},
 };
-
-#endif // OPCODES_H

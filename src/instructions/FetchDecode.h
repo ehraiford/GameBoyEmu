@@ -1,6 +1,4 @@
-#ifndef FETCH_DECODE_H
-#define FETCH_DECODE_H
-
+#pragma once
 #include "../memory/DataBus.h"
 #include "Opcodes.h"
 #include <array>
@@ -29,5 +27,3 @@ class Fetcher {
 	int get_lift_pointer();
 	void set_lift_pointer(uint16_t new_address);
 };
-
-#endif // FETCH_DECODE_H

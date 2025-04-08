@@ -1,5 +1,4 @@
-#ifndef CPU_H
-#define CPU_H
+#pragma once
 #include "../memory/DataBus.h"
 #include <iostream>
 
@@ -218,5 +217,3 @@ class Cpu {
 
 	void unsupported_op(void* args);
 };
-
-#endif

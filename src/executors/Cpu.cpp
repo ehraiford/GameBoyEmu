@@ -994,15 +994,15 @@ void Cpu::push_16bit_register_to_stack(void* args) {
 // Interrupt Instructions
 // DI
 void Cpu::disable_interrupts(void* args) {
-	// TODO
+	this->interrupts_enabled = false;
 };
 // EI
 void Cpu::enable_interrupts(void* args) {
-	// TODO
+	this->interrupts_enabled = true;
 };
 // HALT
 void Cpu::halt(void* args) {
-	// TODO
+	this->state = CpuState::HALTED;
 };
 
 // Miscellaneous
@@ -1037,6 +1037,6 @@ void Cpu::decimal_adjust_accumulator(void* args) {
 void Cpu::nop(void* args) {};
 // STOP
 void Cpu::stop(void* args) {
-	// TODO
+	this->state = CpuState::STOPPED;
 };
 void Cpu::unsupported_op(void* args) {};
