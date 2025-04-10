@@ -21,11 +21,22 @@ enum CpuState {
 	HALTED,
 };
 
+class JumpTableEntry;
+
+struct CurrentOperation {
+	JumpTableEntry* jump_table_entry;
+	uint8_t remaining_cycles;
+	std::string disassembly;
+
+	uint8_t get_length();
+	uint8_t get_total_cycles();
+};
+
 // TODO Check runtime alignment...
-class Rom; // Forward declaration of Rom
 class Cpu {
   private:
 	CpuState state;
+	CurrentOperation current_operation;
 	alignas(uint16_t) uint8_t b;
 	uint8_t c;
 	alignas(uint16_t) uint8_t d;
@@ -51,23 +62,15 @@ class Cpu {
 	void set_flags_subtraction(uint16_t op0, uint16_t op1, uint16_t result);
 	bool condition_is_met(Condition condition);
 
+	void fetch_next_instruction();
+
   public:
-	Cpu(DataBus* databus) {
-		this->databus = databus;
-		this->state = RUNNING;
-		this->a = 0;
-		this->b = 0;
-		this->c = 0;
-		this->d = 0;
-		this->e = 0;
-		this->f = 0;
-		this->h = 0;
-		this->l = 0;
-		this->sp = 0;
-		this->pc = 0;
-		this->interrupts_enabled = false;
-	};
+	Cpu(DataBus* databus);
 	~Cpu();
+
+	void tick_machine_cycle();
+
+	std::string get_instruction_disassembly();
 
 	uint8_t* get_b_pointer();
 	uint8_t* get_c_pointer();

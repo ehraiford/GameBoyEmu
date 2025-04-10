@@ -1,5 +1,13 @@
 #include "Cpu.h"
+#include "../instructions/Opcodes.h"
 #include <iostream>
+
+uint8_t CurrentOperation::get_total_cycles() {
+	return this->jump_table_entry->op_code->get_cycles();
+};
+uint8_t CurrentOperation::get_length() {
+	return this->jump_table_entry->op_code->get_length();
+};
 
 Cpu::Cpu(DataBus* databus) {
 	this->databus = databus;
@@ -15,6 +23,57 @@ Cpu::Cpu(DataBus* databus) {
 	this->sp = 0;
 	this->pc = 0;
 	this->interrupts_enabled = false;
+
+	auto instruction_bytes = databus->get_instruction(0);
+	JumpTableEntry entry;
+	if (instruction_bytes[0] == 0xCB) {
+		entry = jump_table_cb[instruction_bytes[1]];
+	} else {
+		entry = jump_table[instruction_bytes[0]];
+	}
+
+	this->current_operation = CurrentOperation{&entry, entry.op_code->get_cycles()};
+};
+
+void Cpu::fetch_next_instruction() {
+	this->pc += this->current_operation.get_length();
+	auto instruction_bytes = this->databus->get_instruction(this->pc);
+	JumpTableEntry entry;
+	if (instruction_bytes[0] == 0xCB) {
+		entry = jump_table_cb[instruction_bytes[1]];
+	} else {
+		entry = jump_table[instruction_bytes[0]];
+	}
+
+	uint8_t cycles = entry.op_code->get_cycles();
+	std::string disassembly = entry.get_disassembly(instruction_bytes);
+
+	this->current_operation = CurrentOperation{
+		&entry,
+		cycles,
+		disassembly,
+	};
+}
+
+std::string Cpu::get_instruction_disassembly() {
+	return this->current_operation.disassembly;
+};
+
+void Cpu::tick_machine_cycle() {
+	switch (this->state) {
+	case CpuState::RUNNING:
+		this->current_operation.remaining_cycles -= 1;
+		if (this->current_operation.remaining_cycles == 0) {
+			this->current_operation.jump_table_entry->op_code->execute(this);
+			this->fetch_next_instruction();
+		}
+	case CpuState::STOPPED:
+		std::cout << "Hit STOPPED State. Still needs to be implemented" << std::endl;
+	case CpuState::HALTED:
+		std::cout << "Hit HALTED State. Still needs to be implemented" << std::endl;
+	default:
+		std::cout << "While ticking CPU, we are in a state that we haven't implemented yet" << std::endl;
+	};
 };
 
 uint16_t Cpu::get_hl() {
@@ -946,15 +1005,15 @@ void Cpu::push_16bit_register_to_stack(uint16_t* reg) {
 // Interrupt Instructions
 // DI
 void Cpu::disable_interrupts() {
-	// TODO
+	this->interrupts_enabled = false;
 };
 // EI
 void Cpu::enable_interrupts() {
-	// TODO
+	this->interrupts_enabled = true;
 };
 // HALT
 void Cpu::halt() {
-	// TODO
+	this->state = HALTED;
 };
 
 // Miscellaneous
@@ -989,7 +1048,7 @@ void Cpu::decimal_adjust_accumulator() {
 void Cpu::nop() {};
 // STOP
 void Cpu::stop() {
-	// TODO
+	this->state = STOPPED;
 };
 
 void Cpu::unsupported_op() {};

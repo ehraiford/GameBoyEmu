@@ -1,20 +1,37 @@
 #pragma once
 #include "../executors/Cpu.h"
 #include <array>
+#include <tuple>
+#include <variant>
 
-typedef void (Cpu::*OpFunc)(void*);
+typedef void (Cpu::*NoArgs)();
+typedef void (Cpu::*OneU8)(uint8_t*);
+typedef void (Cpu::*TwoU8)(uint8_t*, uint8_t*);
+typedef void (Cpu::*OneU16)(uint16_t*);
+typedef void (Cpu::*TwoU16)(uint16_t*, uint16_t*);
+typedef void (Cpu::*ConU16)(Condition*, uint16_t*);
+typedef void (Cpu::*OneI8)(int8_t*);
+typedef void (Cpu::*ConI8)(Condition*, int8_t*);
+typedef void (Cpu::*Con)(Condition*);
+
+using OpFunc = std::variant<NoArgs, OneU8, TwoU8, OneU16, TwoU16, ConU16, OneI8, ConI8, Con>;
+
 class OpCode {
-	OpFunc op_func;
+	OpFunc opfunc;
 	uint8_t cycles;
 	uint8_t bytes;
 
   public:
-	OpCode(OpFunc func, uint8_t cycles, uint8_t bytes) : op_func(func), cycles(cycles), bytes(bytes) {};
+	OpCode(OpFunc func, uint8_t cycles, uint8_t bytes) : opfunc(func), cycles(cycles), bytes(bytes) {};
 
-	void execute(Cpu* cpu, void* args);
+	void execute(Cpu* cpu);
 	uint8_t get_length();
 	uint8_t get_cycles();
 };
+
+using FuncArgs =
+	std::variant<std::monostate, uint8_t*, std::tuple<uint8_t*, uint8_t*>, uint16_t*, std::tuple<uint16_t*, uint16_t*>,
+				 std::tuple<Condition*, uint16_t*>, int8_t*, std::tuple<Condition*, int8_t*>, Condition*>;
 
 struct JumpTableEntry {
 	OpCode* op_code;
