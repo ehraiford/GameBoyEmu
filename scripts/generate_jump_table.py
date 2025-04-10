@@ -137,20 +137,17 @@ class JumpTableEntry:
         self.arguments = arguments
 
     def get_arguments_lambda(self) -> str:
-        func = "[](Cpu* cpu, uint8_t* instr_ptr) -> void* "
+        func = "[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs "
         arguments = remove_na_arguments(self.arguments)
 
         if len(arguments) == 0:
-            func += "{ return nullptr; }"
-        elif len(arguments) == 1 and (arguments[0].type == "uint8_t" or arguments[0].type == "Condition"):
-            func += f"{{ return reinterpret_cast<void*>({arguments[0].function}); }}"
+            func += "{ return std::monostate(); }"
+        elif len(arguments) == 1 and arguments[0].type == "uint8_t":
+            func += f"{{ return static_cast<uint8_t>({arguments[0].function});}}"
         elif len(arguments) == 1:
             func += f"{{ return {arguments[0].function}; }}"
         else:
-            func += f"""{{
-            auto* args = new std::pair<{arguments[0].type}, {arguments[1].type}>({arguments[0].function}, {arguments[1].function});
-            return static_cast<void*>(args);
-        }}"""
+            func += f"{{ return std::tuple<{arguments[0].type}, {arguments[1].type}>({arguments[0].function}, {arguments[1].function});}}"
         return func
 
     def get_disassembly_lambda(self) -> str:
@@ -351,7 +348,7 @@ def decode_byte(byte: int):
     elif byte == 0b11001101:
         return JumpTableEntry("call", "CALL", [immediate_16()])
     elif byte & 0b11000111 == 0b11000111:
-        return JumpTableEntry("call_vec", "RST", [Argument(f"reinterpret_cast<void*>({(byte & 0b00111000) >> 3})", "uint8_t", f"std::format(\"{{:02x}}\", {(byte & 0b00111000) >> 3})"),])
+        return JumpTableEntry("call_vec", "RST", [Argument(f"{(byte & 0b00111000) >> 3}", "uint8_t", f"std::format(\"{{:02x}}\", {(byte & 0b00111000) >> 3})"),])
     elif byte & 0b11001111 == 0b11000001:
         return JumpTableEntry("pop_stack_to_16bit_register", "POP", [r16stk(byte)])
     elif byte & 0b11001111 == 0b11000101:
