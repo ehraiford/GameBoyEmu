@@ -11,6 +11,3 @@ uint8_t OpCode::get_length() {
 uint8_t OpCode::get_cycles() {
 	return this->cycles;
 }
-void OpCode::execute(Cpu* cpu) {
-	
-}

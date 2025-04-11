@@ -153,7 +153,7 @@ class JumpTableEntry:
     def get_disassembly_lambda(self) -> str:
         func = "[](std::array<uint8_t, 3> bytes) -> const std::string {\n"
         if len(self.arguments) == 0:
-            func += f"\t\t\treturn \"{self.op_name}\";\n"
+            return ""
         elif len(self.arguments) == 1:
             arg_is_string_literal = self.arguments[0].disassembly.find('(') == -1
             if arg_is_string_literal:
@@ -178,9 +178,41 @@ class JumpTableEntry:
                 func += f"\t\t\treturn string;\n"              
         func += "\t\t}"
         return func
+    def get_jump_table_class(self):
+        cpp_arguments = [argument for argument in self.arguments if argument.type != "N/A"]
+        
+        entry_class = "JumpTableEntry"
+        if len(cpp_arguments) == 0:
+           entry_class = "NoArgEntry"
+        elif len(cpp_arguments) == 1:
+            if cpp_arguments[0].type == "uint8_t*" or cpp_arguments[0].type == "uint8_t":
+                entry_class = "OneU8Entry"
+            elif cpp_arguments[0].type == "uint16_t*":
+                entry_class = "OneU16Entry"
+            elif cpp_arguments[0].type == "int8_t*":
+                entry_class = "OneI8Entry"
+            elif cpp_arguments[0].type == "Condition":
+                entry_class = "ConEntry"
+            else:
+                print(f"FuncType was unexpectedly: {cpp_arguments[0].type}")
+        else:
+            if (cpp_arguments[0].type == "uint8_t*" or cpp_arguments[0].type == "uint8_t") and cpp_arguments[1].type == "uint8_t*":
+                entry_class = "TwoU8Entry"
+            elif cpp_arguments[0].type == "uint16_t*" and cpp_arguments[1].type == "uint16_t*":
+                entry_class = "TwoU16Entry"
+            elif cpp_arguments[0].type == "Condition" and cpp_arguments[1].type == "int8_t*":
+                entry_class = "ConI8Entry"            
+            elif cpp_arguments[0].type == "Condition" and cpp_arguments[1].type == "uint8_t*":
+                entry_class = "ConU8Entry"
+            elif cpp_arguments[0].type == "Condition" and cpp_arguments[1].type == "uint16_t*":
+                entry_class = "ConU16Entry"
+            else:
+                print(f"FuncType was unexpectedly: {cpp_arguments[0].type} and {cpp_arguments[1].type}")
+        return entry_class
     def to_string(self) -> str:
-       return f"""
-    JumpTableEntry {{
+  
+        return f"""
+        {self.get_jump_table_class()} {{
         &{self.instruction_name},
         {self.get_arguments_lambda()},
         {self.get_disassembly_lambda()}
