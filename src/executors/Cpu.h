@@ -111,7 +111,7 @@ class Cpu {
 
 	// 8-bit arithmetic instructions
 	void add_with_carry_register_to_a(uint8_t* src);		 // ADC A,r8
-	void add_with_carry_from_hl_address_to_a(uint8_t* src);	 // ADC A,[HL]
+	void add_with_carry_from_hl_address_to_a();				 // ADC A,[HL]
 	void add_with_carry_immediate_to_a(uint8_t* src);		 // ADC A,n8
 	void add_register_to_a(uint8_t* src);					 // ADD A,r8
 	void add_value_at_hl_address_to_a();					 // ADD A,[HL]

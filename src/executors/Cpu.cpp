@@ -64,7 +64,7 @@ void Cpu::tick_machine_cycle() {
 	case CpuState::RUNNING:
 		this->current_operation.remaining_cycles -= 1;
 		if (this->current_operation.remaining_cycles == 0) {
-			this->current_operation.jump_table_entry->op_code->execute(this);
+			// this->current_operation.jump_table_entry->op_code->execute(this);
 			this->fetch_next_instruction();
 		}
 	case CpuState::STOPPED:
@@ -278,8 +278,8 @@ void Cpu::add_with_carry_register_to_a(uint8_t* src) {
 };
 
 // ADC A,[HL]
-void Cpu::add_with_carry_from_hl_address_to_a(uint8_t* src) {
-	uint8_t value = *src + (this->get_flag(Flag::C_FLAG) << 8);
+void Cpu::add_with_carry_from_hl_address_to_a() {
+	uint8_t value = this->databus->get_memory(this->get_hl()) + (this->get_flag(Flag::C_FLAG) << 8);
 	uint16_t result = this->a + value;
 
 	this->set_flags_addition(this->a, value, result);

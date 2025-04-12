@@ -12,13 +12,14 @@ typedef void (Cpu::*TwoU16)(uint16_t*, uint16_t*);
 typedef void (Cpu::*ConU16)(Condition*, uint16_t*);
 typedef void (Cpu::*OneI8)(int8_t*);
 typedef void (Cpu::*ConI8)(Condition*, int8_t*);
-typedef void (Cpu::*ConU8)(Condition*, int8_t*);
+typedef void (Cpu::*ConU8)(Condition*, uint8_t*);
 typedef void (Cpu::*Con)(Condition*);
 
-using OpFunc = std::variant<NoArgs, OneU8, TwoU8, OneU16, TwoU16, ConU16, OneI8, ConI8, Con>;
-using FuncArgs = std::variant<std::monostate, uint8_t, uint8_t*, std::tuple<uint8_t*, uint8_t*>,
-							  std::tuple<uint8_t, uint8_t*>, uint16_t*, std::tuple<uint16_t*, uint16_t*>,
-							  std::tuple<Condition, uint16_t*>, int8_t*, std::tuple<Condition, int8_t*>, Condition>;
+using OpFunc = std::variant<NoArgs, OneU8, TwoU8, OneU16, TwoU16, ConU16, OneI8, ConI8, ConU8, Con>;
+using FuncArgs =
+	std::variant<std::monostate, uint8_t, uint8_t*, std::tuple<uint8_t*, uint8_t*>, std::tuple<uint8_t, uint8_t*>,
+				 uint16_t*, std::tuple<uint16_t*, uint16_t*>, std::tuple<Condition, uint16_t*>, int8_t*,
+				 std::tuple<Condition, int8_t*>, std::tuple<Condition, uint8_t*>, Condition>;
 
 class OpCode {
 	OpFunc opfunc;
@@ -28,9 +29,89 @@ class OpCode {
   public:
 	OpCode(OpFunc func, uint8_t cycles, uint8_t bytes) : opfunc(func), cycles(cycles), bytes(bytes) {};
 
-	void execute(Cpu* cpu, FuncArgs args);
+	void virtual execute(Cpu* cpu, FuncArgs args) = 0;
 	uint8_t get_length();
 	uint8_t get_cycles();
+};
+class NoArgCode : public OpCode {
+	NoArgs opfunc;
+
+  public:
+	NoArgCode(NoArgs func, uint8_t cycles, uint8_t bytes) : OpCode(func, cycles, bytes), opfunc(func) {
+	}
+	void execute(Cpu* cpu, FuncArgs args) override;
+};
+class OneU8Code : public OpCode {
+	OneU8 opfunc;
+
+  public:
+	OneU8Code(OneU8 func, uint8_t cycles, uint8_t bytes) : OpCode(func, cycles, bytes), opfunc(func) {
+	}
+	void execute(Cpu* cpu, FuncArgs args) override;
+};
+class TwoU8Code : public OpCode {
+	TwoU8 opfunc;
+
+  public:
+	TwoU8Code(TwoU8 func, uint8_t cycles, uint8_t bytes) : OpCode(func, cycles, bytes), opfunc(func) {
+	}
+	void execute(Cpu* cpu, FuncArgs args) override;
+};
+class OneU16Code : public OpCode {
+	OneU16 opfunc;
+
+  public:
+	OneU16Code(OneU16 func, uint8_t cycles, uint8_t bytes) : OpCode(func, cycles, bytes), opfunc(func) {
+	}
+	void execute(Cpu* cpu, FuncArgs args) override;
+};
+class TwoU16Code : public OpCode {
+	TwoU16 opfunc;
+
+  public:
+	TwoU16Code(TwoU16 func, uint8_t cycles, uint8_t bytes) : OpCode(func, cycles, bytes), opfunc(func) {
+	}
+	void execute(Cpu* cpu, FuncArgs args) override;
+};
+class ConU16Code : public OpCode {
+	ConU16 opfunc;
+
+  public:
+	ConU16Code(ConU16 func, uint8_t cycles, uint8_t bytes) : OpCode(func, cycles, bytes), opfunc(func) {
+	}
+	void execute(Cpu* cpu, FuncArgs args) override;
+};
+class OneI8Code : public OpCode {
+	OneI8 opfunc;
+
+  public:
+	OneI8Code(OneI8 func, uint8_t cycles, uint8_t bytes) : OpCode(func, cycles, bytes), opfunc(func) {
+	}
+	void execute(Cpu* cpu, FuncArgs args) override;
+};
+class ConI8Code : public OpCode {
+	ConI8 opfunc;
+
+  public:
+	ConI8Code(ConI8 func, uint8_t cycles, uint8_t bytes) : OpCode(func, cycles, bytes), opfunc(func) {
+	}
+	void execute(Cpu* cpu, FuncArgs args) override;
+};
+class ConU8Code : public OpCode {
+	ConU8 opfunc;
+
+  public:
+	ConU8Code(ConU8 func, uint8_t cycles, uint8_t bytes) : OpCode(func, cycles, bytes), opfunc(func) {
+	}
+	void execute(Cpu* cpu, FuncArgs args) override;
+};
+class ConCode : public OpCode {
+	Con opfunc;
+
+  public:
+	ConCode(Con func, uint8_t cycles, uint8_t bytes) : OpCode(func, cycles, bytes), opfunc(func) {
+	}
+	void execute(Cpu* cpu, FuncArgs args) override;
 };
 
 struct JumpTableEntry {
@@ -40,7 +121,7 @@ struct JumpTableEntry {
 };
 
 struct NoArgEntry : JumpTableEntry {
-	NoArgs* op_code;
+	NoArgCode* op_code;
 	const std::string (*get_disassembly)(std::array<uint8_t, 3>);
 };
 struct OneU8Entry : JumpTableEntry {
@@ -89,121 +170,125 @@ struct ConEntry : JumpTableEntry {
 	const std::string (*get_disassembly)(std::array<uint8_t, 3>);
 };
 
-static OpCode copy = OpCode(&Cpu::copy, 1, 1);
-static OpCode load_immediate_8bit = OpCode(&Cpu::load_immediate_8bit, 2, 2);
-static OpCode load_immediate_16bit = OpCode(&Cpu::load_immediate_16bit, 3, 3);
-static OpCode store_at_hl_address = OpCode(&Cpu::store_at_hl_address, 2, 1);
-static OpCode store_immediate_at_hl_address = OpCode(&Cpu::store_immediate_at_hl_address, 3, 2);
-static OpCode load_from_hl_address = OpCode(&Cpu::load_from_hl_address, 2, 1);
-static OpCode store_a_at_register_address = OpCode(&Cpu::store_a_at_register_address, 2, 1);
-static OpCode store_a_at_immediate_address = OpCode(&Cpu::store_a_at_immediate_address, 4, 3);
-static OpCode store_a_at_immediate_hardware_address = OpCode(&Cpu::store_a_at_immediate_hardware_address, 3, 2);
-static OpCode store_a_at_hardware_address_offset_by_c = OpCode(&Cpu::store_a_at_hardware_address_offset_by_c, 2, 1);
-static OpCode load_a_from_register_address = OpCode(&Cpu::load_a_from_register_address, 2, 1);
-static OpCode load_a_from_immediate_address = OpCode(&Cpu::load_a_from_immediate_address, 4, 3);
-static OpCode load_a_from_immediate_hardware_address = OpCode(&Cpu::load_a_from_immediate_hardware_address, 3, 2);
-static OpCode load_a_from_hardware_address_offset_by_c = OpCode(&Cpu::load_a_from_hardware_address_offset_by_c, 2, 1);
-static OpCode store_a_at_hl_address_increment = OpCode(&Cpu::store_a_at_hl_address_increment, 2, 1);
-static OpCode store_a_at_hl_address_decrement = OpCode(&Cpu::store_a_at_hl_address_decrement, 2, 1);
-static OpCode load_a_from_hl_address_increment = OpCode(&Cpu::load_a_from_hl_address_increment, 2, 1);
-static OpCode load_a_from_hl_address_decrement = OpCode(&Cpu::load_a_from_hl_address_decrement, 2, 1);
+static TwoU8Code copy = TwoU8Code(&Cpu::copy, 1, 1);
+static TwoU8Code load_immediate_8bit = TwoU8Code(&Cpu::load_immediate_8bit, 2, 2);
+static TwoU16Code load_immediate_16bit = TwoU16Code(&Cpu::load_immediate_16bit, 3, 3);
+static OneU8Code store_at_hl_address = OneU8Code(&Cpu::store_at_hl_address, 2, 1);
+static OneU8Code store_immediate_at_hl_address = OneU8Code(&Cpu::store_immediate_at_hl_address, 3, 2);
+static OneU8Code load_from_hl_address = OneU8Code(&Cpu::load_from_hl_address, 2, 1);
+static OneU16Code store_a_at_register_address = OneU16Code(&Cpu::store_a_at_register_address, 2, 1);
+static OneU16Code store_a_at_immediate_address = OneU16Code(&Cpu::store_a_at_immediate_address, 4, 3);
+static OneU8Code store_a_at_immediate_hardware_address = OneU8Code(&Cpu::store_a_at_immediate_hardware_address, 3, 2);
+static NoArgCode store_a_at_hardware_address_offset_by_c =
+	NoArgCode(&Cpu::store_a_at_hardware_address_offset_by_c, 2, 1);
+static OneU16Code load_a_from_register_address = OneU16Code(&Cpu::load_a_from_register_address, 2, 1);
+static OneU16Code load_a_from_immediate_address = OneU16Code(&Cpu::load_a_from_immediate_address, 4, 3);
+static OneU8Code load_a_from_immediate_hardware_address = OneU8Code(&Cpu::load_a_from_immediate_hardware_address, 3, 2);
+static NoArgCode load_a_from_hardware_address_offset_by_c =
+	NoArgCode(&Cpu::load_a_from_hardware_address_offset_by_c, 2, 1);
+static NoArgCode store_a_at_hl_address_increment = NoArgCode(&Cpu::store_a_at_hl_address_increment, 2, 1);
+static NoArgCode store_a_at_hl_address_decrement = NoArgCode(&Cpu::store_a_at_hl_address_decrement, 2, 1);
+static NoArgCode load_a_from_hl_address_increment = NoArgCode(&Cpu::load_a_from_hl_address_increment, 2, 1);
+static NoArgCode load_a_from_hl_address_decrement = NoArgCode(&Cpu::load_a_from_hl_address_decrement, 2, 1);
 
-static OpCode add_with_carry_register_to_a = OpCode(&Cpu::add_with_carry_register_to_a, 1, 1);
-static OpCode add_with_carry_from_hl_address_to_a = OpCode(&Cpu::add_with_carry_from_hl_address_to_a, 2, 1);
-static OpCode add_with_carry_immediate_to_a = OpCode(&Cpu::add_with_carry_immediate_to_a, 2, 2);
-static OpCode add_register_to_a = OpCode(&Cpu::add_register_to_a, 1, 1);
-static OpCode add_value_at_hl_address_to_a = OpCode(&Cpu::add_value_at_hl_address_to_a, 2, 1);
-static OpCode add_immediate_to_a = OpCode(&Cpu::add_immediate_to_a, 2, 2);
-static OpCode compare_a_with_register = OpCode(&Cpu::compare_a_with_register, 1, 1);
-static OpCode compare_a_with_value_at_hl_address = OpCode(&Cpu::compare_a_with_value_at_hl_address, 2, 1);
-static OpCode compare_a_with_immediate = OpCode(&Cpu::compare_a_with_immediate, 2, 2);
-static OpCode decrement_register = OpCode(&Cpu::decrement_register, 1, 1);
-static OpCode decrement_value_at_hl_address = OpCode(&Cpu::decrement_value_at_hl_address, 3, 1);
-static OpCode increment_register = OpCode(&Cpu::increment_register, 1, 1);
-static OpCode increment_value_at_hl_address = OpCode(&Cpu::increment_value_at_hl_address, 3, 1);
-static OpCode subtract_with_carry_register_from_a = OpCode(&Cpu::subtract_with_carry_register_from_a, 1, 1);
-static OpCode subtract_with_carry_value_at_hl_address_from_a =
-	OpCode(&Cpu::subtract_with_carry_value_at_hl_address_from_a, 2, 1);
-static OpCode subtract_with_carry_immediate_from_a = OpCode(&Cpu::subtract_with_carry_immediate_from_a, 2, 2);
-static OpCode subtract_register_from_a = OpCode(&Cpu::subtract_register_from_a, 1, 1);
-static OpCode subtract_value_at_hl_address_from_a = OpCode(&Cpu::subtract_value_at_hl_address_from_a, 2, 1);
-static OpCode subtract_immediate_from_a = OpCode(&Cpu::subtract_immediate_from_a, 2, 2);
-static OpCode add_16bit_register_to_HL = OpCode(&Cpu::add_16bit_register_to_HL, 2, 1);
-static OpCode decrement_16bit_register = OpCode(&Cpu::decrement_16bit_register, 2, 1);
-static OpCode increment_16bit_register = OpCode(&Cpu::increment_16bit_register, 2, 1);
-static OpCode and_a_with_register = OpCode(&Cpu::and_a_with_register, 1, 1);
-static OpCode and_a_with_value_at_hl_address = OpCode(&Cpu::and_a_with_value_at_hl_address, 2, 1);
-static OpCode and_a_with_immediate = OpCode(&Cpu::and_a_with_immediate, 2, 2);
-static OpCode invert_a = OpCode(&Cpu::invert_a, 1, 1);
-static OpCode or_a_with_register = OpCode(&Cpu::or_a_with_register, 1, 1);
-static OpCode or_a_with_value_at_hl_address = OpCode(&Cpu::or_a_with_value_at_hl_address, 2, 1);
-static OpCode or_a_with_immediate = OpCode(&Cpu::or_a_with_immediate, 2, 2);
-static OpCode xor_a_with_register = OpCode(&Cpu::xor_a_with_register, 1, 1);
-static OpCode xor_a_with_value_at_hl_address = OpCode(&Cpu::xor_a_with_value_at_hl_address, 2, 1);
-static OpCode xor_a_with_immediate = OpCode(&Cpu::xor_a_with_immediate, 2, 2);
-static OpCode set_zflag_if_register_bit_not_set = OpCode(&Cpu::set_zflag_if_register_bit_not_set, 2, 2);
-static OpCode set_zflag_if_value_at_hl_address_bit_not_set =
-	OpCode(&Cpu::set_zflag_if_value_at_hl_address_bit_not_set, 3, 2);
-static OpCode clear_register_bit = OpCode(&Cpu::clear_register_bit, 2, 2);
-static OpCode set_register_bit = OpCode(&Cpu::set_register_bit, 2, 2);
-static OpCode clear_value_at_hl_address_bit = OpCode(&Cpu::clear_value_at_hl_address_bit, 4, 2);
-static OpCode set_value_at_hl_address_bit = OpCode(&Cpu::set_value_at_hl_address_bit, 4, 2);
-static OpCode rotate_register_left = OpCode(&Cpu::rotate_register_left, 2, 2);
-static OpCode rotate_value_at_hl_address_left = OpCode(&Cpu::rotate_value_at_hl_address_left, 4, 2);
-static OpCode rotate_a_left = OpCode(&Cpu::rotate_a_left, 1, 1);
-static OpCode rotate_register_left_with_carry = OpCode(&Cpu::rotate_register_left_with_carry, 2, 2);
-static OpCode rotate_value_at_hl_address_left_with_carry =
-	OpCode(&Cpu::rotate_value_at_hl_address_left_with_carry, 4, 2);
-static OpCode rotate_a_left_with_carry = OpCode(&Cpu::rotate_a_left_with_carry, 1, 1);
-static OpCode rotate_register_right = OpCode(&Cpu::rotate_register_right, 2, 2);
-static OpCode rotate_value_at_hl_address_right = OpCode(&Cpu::rotate_value_at_hl_address_right, 4, 2);
-static OpCode rotate_a_right = OpCode(&Cpu::rotate_a_right, 1, 1);
-static OpCode rotate_register_right_with_carry = OpCode(&Cpu::rotate_register_right_with_carry, 2, 2);
-static OpCode rotate_value_at_hl_address_right_with_carry =
-	OpCode(&Cpu::rotate_value_at_hl_address_right_with_carry, 4, 2);
-static OpCode rotate_a_right_with_carry = OpCode(&Cpu::rotate_a_right_with_carry, 1, 1);
-static OpCode shift_register_left_arithmetically = OpCode(&Cpu::shift_register_left_arithmetically, 2, 2);
-static OpCode shift_value_at_hl_address_left_arithmetically =
-	OpCode(&Cpu::shift_value_at_hl_address_left_arithmetically, 4, 2);
-static OpCode shift_register_right_arithmetically = OpCode(&Cpu::shift_register_right_arithmetically, 2, 2);
-static OpCode shift_value_at_hl_address_right_arithmetically =
-	OpCode(&Cpu::shift_value_at_hl_address_right_arithmetically, 4, 2);
-static OpCode shift_register_right_logically = OpCode(&Cpu::shift_register_right_logically, 2, 2);
-static OpCode shift_value_at_hl_address_right_logically = OpCode(&Cpu::shift_value_at_hl_address_right_logically, 4, 2);
-static OpCode swap_register_nibbles = OpCode(&Cpu::swap_register_nibbles, 2, 2);
-static OpCode swap_value_at_hl_address_nibbles = OpCode(&Cpu::swap_value_at_hl_address_nibbles, 4, 2);
-static OpCode call = OpCode(&Cpu::call, 6, 3);
-static OpCode call_conditionally = OpCode(&Cpu::call_conditionally, 6, 3);
-static OpCode jump_to_value_at_hl_address = OpCode(&Cpu::jump_to_value_at_hl_address, 1, 1);
-static OpCode jump_to_immediate = OpCode(&Cpu::jump_to_immediate, 4, 3);
-static OpCode jump_to_immediate_conditionally = OpCode(&Cpu::jump_to_immediate_conditionally, 4, 3);
-static OpCode jump_relative_to_immediate = OpCode(&Cpu::jump_relative_to_immediate, 3, 2);
-static OpCode jump_relative_to_immediate_conditionally = OpCode(&Cpu::jump_relative_to_immediate_conditionally, 3, 2);
-static OpCode return_from_subroutine_conditionally = OpCode(&Cpu::return_from_subroutine_conditionally, 5, 1);
-static OpCode return_from_subroutine = OpCode(&Cpu::return_from_subroutine, 4, 1);
-static OpCode return_from_interrupt_subroutine = OpCode(&Cpu::return_from_interrupt_subroutine, 4, 1);
-static OpCode call_vec = OpCode(&Cpu::call_vec, 4, 1);
-static OpCode invert_carry_flag = OpCode(&Cpu::invert_carry_flag, 1, 1);
-static OpCode set_carry_flag = OpCode(&Cpu::set_carry_flag, 1, 1);
-static OpCode add_sp_to_hl = OpCode(&Cpu::add_sp_to_hl, 2, 1);
-static OpCode add_signed_immediate_to_sp = OpCode(&Cpu::add_signed_immediate_to_sp, 4, 2);
-static OpCode decrement_sp = OpCode(&Cpu::decrement_sp, 2, 1);
-static OpCode increment_sp = OpCode(&Cpu::increment_sp, 2, 1);
-static OpCode load_sp_from_immediate_16bit = OpCode(&Cpu::load_sp_from_immediate_16bit, 3, 3);
-static OpCode store_sp_at_immediate_address = OpCode(&Cpu::store_sp_at_immediate_address, 5, 3);
-static OpCode load_hl_from_sp_plus_signed_immediate = OpCode(&Cpu::load_hl_from_sp_plus_signed_immediate, 3, 2);
-static OpCode copy_hl_to_sp = OpCode(&Cpu::copy_hl_to_sp, 2, 1);
-static OpCode pop_stack_to_af = OpCode(&Cpu::pop_stack_to_af, 3, 1);
-static OpCode pop_stack_to_16bit_register = OpCode(&Cpu::pop_stack_to_16bit_register, 3, 1);
-static OpCode push_af_to_stack = OpCode(&Cpu::push_af_to_stack, 4, 1);
-static OpCode push_16bit_register_to_stack = OpCode(&Cpu::push_16bit_register_to_stack, 4, 1);
-static OpCode disable_interrupts = OpCode(&Cpu::disable_interrupts, 1, 1);
-static OpCode enable_interrupts = OpCode(&Cpu::enable_interrupts, 1, 1);
-static OpCode halt = OpCode(&Cpu::halt, 0, 1);
-static OpCode decimal_adjust_accumulator = OpCode(&Cpu::decimal_adjust_accumulator, 1, 1);
-static OpCode nop = OpCode(&Cpu::nop, 1, 1);
-static OpCode stop = OpCode(&Cpu::stop, 0, 2);
-static OpCode unsupported_op = OpCode(&Cpu::unsupported_op, 0, 1);
+static OneU8Code add_with_carry_register_to_a = OneU8Code(&Cpu::add_with_carry_register_to_a, 1, 1);
+static NoArgCode add_with_carry_from_hl_address_to_a = NoArgCode(&Cpu::add_with_carry_from_hl_address_to_a, 2, 1);
+static OneU8Code add_with_carry_immediate_to_a = OneU8Code(&Cpu::add_with_carry_immediate_to_a, 2, 2);
+static OneU8Code add_register_to_a = OneU8Code(&Cpu::add_register_to_a, 1, 1);
+static NoArgCode add_value_at_hl_address_to_a = NoArgCode(&Cpu::add_value_at_hl_address_to_a, 2, 1);
+static OneU8Code add_immediate_to_a = OneU8Code(&Cpu::add_immediate_to_a, 2, 2);
+static OneU8Code compare_a_with_register = OneU8Code(&Cpu::compare_a_with_register, 1, 1);
+static NoArgCode compare_a_with_value_at_hl_address = NoArgCode(&Cpu::compare_a_with_value_at_hl_address, 2, 1);
+static OneU8Code compare_a_with_immediate = OneU8Code(&Cpu::compare_a_with_immediate, 2, 2);
+static OneU8Code decrement_register = OneU8Code(&Cpu::decrement_register, 1, 1);
+static NoArgCode decrement_value_at_hl_address = NoArgCode(&Cpu::decrement_value_at_hl_address, 3, 1);
+static OneU8Code increment_register = OneU8Code(&Cpu::increment_register, 1, 1);
+static NoArgCode increment_value_at_hl_address = NoArgCode(&Cpu::increment_value_at_hl_address, 3, 1);
+static OneU8Code subtract_with_carry_register_from_a = OneU8Code(&Cpu::subtract_with_carry_register_from_a, 1, 1);
+static NoArgCode subtract_with_carry_value_at_hl_address_from_a =
+	NoArgCode(&Cpu::subtract_with_carry_value_at_hl_address_from_a, 2, 1);
+static OneU8Code subtract_with_carry_immediate_from_a = OneU8Code(&Cpu::subtract_with_carry_immediate_from_a, 2, 2);
+static OneU8Code subtract_register_from_a = OneU8Code(&Cpu::subtract_register_from_a, 1, 1);
+static NoArgCode subtract_value_at_hl_address_from_a = NoArgCode(&Cpu::subtract_value_at_hl_address_from_a, 2, 1);
+static OneU8Code subtract_immediate_from_a = OneU8Code(&Cpu::subtract_immediate_from_a, 2, 2);
+static OneU16Code add_16bit_register_to_HL = OneU16Code(&Cpu::add_16bit_register_to_HL, 2, 1);
+static OneU16Code decrement_16bit_register = OneU16Code(&Cpu::decrement_16bit_register, 2, 1);
+static OneU16Code increment_16bit_register = OneU16Code(&Cpu::increment_16bit_register, 2, 1);
+static OneU8Code and_a_with_register = OneU8Code(&Cpu::and_a_with_register, 1, 1);
+static NoArgCode and_a_with_value_at_hl_address = NoArgCode(&Cpu::and_a_with_value_at_hl_address, 2, 1);
+static OneU8Code and_a_with_immediate = OneU8Code(&Cpu::and_a_with_immediate, 2, 2);
+static NoArgCode invert_a = NoArgCode(&Cpu::invert_a, 1, 1);
+static OneU8Code or_a_with_register = OneU8Code(&Cpu::or_a_with_register, 1, 1);
+static NoArgCode or_a_with_value_at_hl_address = NoArgCode(&Cpu::or_a_with_value_at_hl_address, 2, 1);
+static OneU8Code or_a_with_immediate = OneU8Code(&Cpu::or_a_with_immediate, 2, 2);
+static OneU8Code xor_a_with_register = OneU8Code(&Cpu::xor_a_with_register, 1, 1);
+static NoArgCode xor_a_with_value_at_hl_address = NoArgCode(&Cpu::xor_a_with_value_at_hl_address, 2, 1);
+static OneU8Code xor_a_with_immediate = OneU8Code(&Cpu::xor_a_with_immediate, 2, 2);
+static TwoU8Code set_zflag_if_register_bit_not_set = TwoU8Code(&Cpu::set_zflag_if_register_bit_not_set, 2, 2);
+static OneU8Code set_zflag_if_value_at_hl_address_bit_not_set =
+	OneU8Code(&Cpu::set_zflag_if_value_at_hl_address_bit_not_set, 3, 2);
+static TwoU8Code clear_register_bit = TwoU8Code(&Cpu::clear_register_bit, 2, 2);
+static TwoU8Code set_register_bit = TwoU8Code(&Cpu::set_register_bit, 2, 2);
+static OneU8Code clear_value_at_hl_address_bit = OneU8Code(&Cpu::clear_value_at_hl_address_bit, 4, 2);
+static OneU8Code set_value_at_hl_address_bit = OneU8Code(&Cpu::set_value_at_hl_address_bit, 4, 2);
+static OneU8Code rotate_register_left = OneU8Code(&Cpu::rotate_register_left, 2, 2);
+static NoArgCode rotate_value_at_hl_address_left = NoArgCode(&Cpu::rotate_value_at_hl_address_left, 4, 2);
+static NoArgCode rotate_a_left = NoArgCode(&Cpu::rotate_a_left, 1, 1);
+static OneU8Code rotate_register_left_with_carry = OneU8Code(&Cpu::rotate_register_left_with_carry, 2, 2);
+static NoArgCode rotate_value_at_hl_address_left_with_carry =
+	NoArgCode(&Cpu::rotate_value_at_hl_address_left_with_carry, 4, 2);
+static NoArgCode rotate_a_left_with_carry = NoArgCode(&Cpu::rotate_a_left_with_carry, 1, 1);
+static OneU8Code rotate_register_right = OneU8Code(&Cpu::rotate_register_right, 2, 2);
+static NoArgCode rotate_value_at_hl_address_right = NoArgCode(&Cpu::rotate_value_at_hl_address_right, 4, 2);
+static NoArgCode rotate_a_right = NoArgCode(&Cpu::rotate_a_right, 1, 1);
+static OneU8Code rotate_register_right_with_carry = OneU8Code(&Cpu::rotate_register_right_with_carry, 2, 2);
+static NoArgCode rotate_value_at_hl_address_right_with_carry =
+	NoArgCode(&Cpu::rotate_value_at_hl_address_right_with_carry, 4, 2);
+static NoArgCode rotate_a_right_with_carry = NoArgCode(&Cpu::rotate_a_right_with_carry, 1, 1);
+static OneU8Code shift_register_left_arithmetically = OneU8Code(&Cpu::shift_register_left_arithmetically, 2, 2);
+static NoArgCode shift_value_at_hl_address_left_arithmetically =
+	NoArgCode(&Cpu::shift_value_at_hl_address_left_arithmetically, 4, 2);
+static OneU8Code shift_register_right_arithmetically = OneU8Code(&Cpu::shift_register_right_arithmetically, 2, 2);
+static NoArgCode shift_value_at_hl_address_right_arithmetically =
+	NoArgCode(&Cpu::shift_value_at_hl_address_right_arithmetically, 4, 2);
+static OneU8Code shift_register_right_logically = OneU8Code(&Cpu::shift_register_right_logically, 2, 2);
+static NoArgCode shift_value_at_hl_address_right_logically =
+	NoArgCode(&Cpu::shift_value_at_hl_address_right_logically, 4, 2);
+static OneU8Code swap_register_nibbles = OneU8Code(&Cpu::swap_register_nibbles, 2, 2);
+static NoArgCode swap_value_at_hl_address_nibbles = NoArgCode(&Cpu::swap_value_at_hl_address_nibbles, 4, 2);
+static OneU16Code call = OneU16Code(&Cpu::call, 6, 3);
+static ConU16Code call_conditionally = ConU16Code(&Cpu::call_conditionally, 6, 3);
+static NoArgCode jump_to_value_at_hl_address = NoArgCode(&Cpu::jump_to_value_at_hl_address, 1, 1);
+static OneU16Code jump_to_immediate = OneU16Code(&Cpu::jump_to_immediate, 4, 3);
+static ConU16Code jump_to_immediate_conditionally = ConU16Code(&Cpu::jump_to_immediate_conditionally, 4, 3);
+static OneI8Code jump_relative_to_immediate = OneI8Code(&Cpu::jump_relative_to_immediate, 3, 2);
+static ConI8Code jump_relative_to_immediate_conditionally =
+	ConI8Code(&Cpu::jump_relative_to_immediate_conditionally, 3, 2);
+static ConCode return_from_subroutine_conditionally = ConCode(&Cpu::return_from_subroutine_conditionally, 5, 1);
+static NoArgCode return_from_subroutine = NoArgCode(&Cpu::return_from_subroutine, 4, 1);
+static NoArgCode return_from_interrupt_subroutine = NoArgCode(&Cpu::return_from_interrupt_subroutine, 4, 1);
+static OneU8Code call_vec = OneU8Code(&Cpu::call_vec, 4, 1);
+static NoArgCode invert_carry_flag = NoArgCode(&Cpu::invert_carry_flag, 1, 1);
+static NoArgCode set_carry_flag = NoArgCode(&Cpu::set_carry_flag, 1, 1);
+static NoArgCode add_sp_to_hl = NoArgCode(&Cpu::add_sp_to_hl, 2, 1);
+static OneI8Code add_signed_immediate_to_sp = OneI8Code(&Cpu::add_signed_immediate_to_sp, 4, 2);
+static NoArgCode decrement_sp = NoArgCode(&Cpu::decrement_sp, 2, 1);
+static NoArgCode increment_sp = NoArgCode(&Cpu::increment_sp, 2, 1);
+static OneU16Code load_sp_from_immediate_16bit = OneU16Code(&Cpu::load_sp_from_immediate_16bit, 3, 3);
+static OneU16Code store_sp_at_immediate_address = OneU16Code(&Cpu::store_sp_at_immediate_address, 5, 3);
+static OneI8Code load_hl_from_sp_plus_signed_immediate = OneI8Code(&Cpu::load_hl_from_sp_plus_signed_immediate, 3, 2);
+static NoArgCode copy_hl_to_sp = NoArgCode(&Cpu::copy_hl_to_sp, 2, 1);
+static NoArgCode pop_stack_to_af = NoArgCode(&Cpu::pop_stack_to_af, 3, 1);
+static OneU16Code pop_stack_to_16bit_register = OneU16Code(&Cpu::pop_stack_to_16bit_register, 3, 1);
+static NoArgCode push_af_to_stack = NoArgCode(&Cpu::push_af_to_stack, 4, 1);
+static OneU16Code push_16bit_register_to_stack = OneU16Code(&Cpu::push_16bit_register_to_stack, 4, 1);
+static NoArgCode disable_interrupts = NoArgCode(&Cpu::disable_interrupts, 1, 1);
+static NoArgCode enable_interrupts = NoArgCode(&Cpu::enable_interrupts, 1, 1);
+static NoArgCode halt = NoArgCode(&Cpu::halt, 0, 1);
+static NoArgCode decimal_adjust_accumulator = NoArgCode(&Cpu::decimal_adjust_accumulator, 1, 1);
+static NoArgCode nop = NoArgCode(&Cpu::nop, 1, 1);
+static NoArgCode stop = NoArgCode(&Cpu::stop, 0, 2);
+static NoArgCode unsupported_op = NoArgCode(&Cpu::unsupported_op, 0, 1);
 constexpr std::array<JumpTableEntry, 256> jump_table = {
 	NoArgEntry{
 		&nop,
