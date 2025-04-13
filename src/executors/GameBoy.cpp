@@ -33,6 +33,7 @@ void GameBoy::process_new_events() {
 	}
 }
 
-void GameBoy::tick() {
+void GameBoy::tick_machine_cycle() {
 	this->process_new_events();
+	this->cpu.tick_machine_cycle();
 }

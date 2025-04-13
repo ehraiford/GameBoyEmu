@@ -153,7 +153,7 @@ class JumpTableEntry:
     def get_disassembly_lambda(self) -> str:
         func = "[](std::array<uint8_t, 3> bytes) -> const std::string {\n"
         if len(self.arguments) == 0:
-            return ""
+            func += f"\t\t\treturn \"{self.op_name}\";\n"
         elif len(self.arguments) == 1:
             arg_is_string_literal = self.arguments[0].disassembly.find('(') == -1
             if arg_is_string_literal:

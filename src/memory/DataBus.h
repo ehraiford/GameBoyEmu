@@ -24,5 +24,6 @@ class DataBus : public Memory {
 	Rom* get_databus();
 	void set_memory(uint16_t address, uint8_t value);
 	uint8_t get_memory(uint16_t address);
-	std::array<uint8_t, 3> get_instruction(uint16_t address);
+	std::array<uint8_t, 3> get_instruction(uint16_t address) override;
+	uint8_t* get_memory_ptr(uint16_t address) override;
 };

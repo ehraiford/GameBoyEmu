@@ -122,6 +122,7 @@ struct JumpTableEntry {
 
 struct NoArgEntry : JumpTableEntry {
 	NoArgCode* op_code;
+	FuncArgs (*get_arguments)(Cpu*, uint8_t*);
 	const std::string (*get_disassembly)(std::array<uint8_t, 3>);
 };
 struct OneU8Entry : JumpTableEntry {
@@ -289,14 +290,15 @@ static NoArgCode decimal_adjust_accumulator = NoArgCode(&Cpu::decimal_adjust_acc
 static NoArgCode nop = NoArgCode(&Cpu::nop, 1, 1);
 static NoArgCode stop = NoArgCode(&Cpu::stop, 0, 2);
 static NoArgCode unsupported_op = NoArgCode(&Cpu::unsupported_op, 0, 1);
-constexpr std::array<JumpTableEntry, 256> jump_table = {
-	NoArgEntry{
-		&nop,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
 
-	},
+constexpr std::array<JumpTableEntry, 256> jump_table = {
+	NoArgEntry{&nop,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "NOP";
+			   }},
 	TwoU16Entry{&load_immediate_16bit,
 				[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 					return std::tuple<uint16_t*, uint16_t*>(cpu->get_bc_pointer(),
@@ -348,13 +350,13 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 				   return string;
 			   }},
-	NoArgEntry{
-		&rotate_a_left_with_carry,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&rotate_a_left_with_carry,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "RLCA";
+			   }},
 	OneU16Entry{&store_sp_at_immediate_address,
 				[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 					return reinterpret_cast<uint16_t*>(instr_ptr + 1);
@@ -410,20 +412,20 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 				   return string;
 			   }},
-	NoArgEntry{
-		&rotate_a_right_with_carry,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
-	NoArgEntry{
-		&stop,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&rotate_a_right_with_carry,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "RRCA";
+			   }},
+	NoArgEntry{&stop,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "STOP";
+			   }},
 	TwoU16Entry{&load_immediate_16bit,
 				[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 					return std::tuple<uint16_t*, uint16_t*>(cpu->get_de_pointer(),
@@ -475,13 +477,13 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 				   return string;
 			   }},
-	NoArgEntry{
-		&rotate_a_left,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&rotate_a_left,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "RLA";
+			   }},
 	OneU8Entry{&jump_relative_to_immediate,
 			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 				   return instr_ptr + 1;
@@ -537,13 +539,13 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 				   return string;
 			   }},
-	NoArgEntry{
-		&rotate_a_right,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&rotate_a_right,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "RRA";
+			   }},
 	ConU8Entry{&jump_relative_to_immediate_conditionally,
 			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 				   return std::tuple<Condition, uint8_t*>(Condition::NZ, instr_ptr + 1);
@@ -606,13 +608,13 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 				   return string;
 			   }},
-	NoArgEntry{
-		&decimal_adjust_accumulator,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&decimal_adjust_accumulator,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "DAA";
+			   }},
 	ConU8Entry{&jump_relative_to_immediate_conditionally,
 			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 				   return std::tuple<Condition, uint8_t*>(Condition::Z, instr_ptr + 1);
@@ -670,13 +672,13 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 				   return string;
 			   }},
-	NoArgEntry{
-		&invert_a,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&invert_a,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "CPL";
+			   }},
 	ConU8Entry{&jump_relative_to_immediate_conditionally,
 			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 				   return std::tuple<Condition, uint8_t*>(Condition::NC, instr_ptr + 1);
@@ -739,13 +741,13 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 				   return string;
 			   }},
-	NoArgEntry{
-		&set_carry_flag,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&set_carry_flag,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "SCF";
+			   }},
 	ConU8Entry{&jump_relative_to_immediate_conditionally,
 			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 				   return std::tuple<Condition, uint8_t*>(Condition::C, instr_ptr + 1);
@@ -803,13 +805,13 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 				   string += std::format("${:02x}", static_cast<int>(bytes[1]));
 				   return string;
 			   }},
-	NoArgEntry{
-		&invert_carry_flag,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&invert_carry_flag,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "CCF";
+			   }},
 	TwoU8Entry{&copy,
 			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 				   return std::tuple<uint8_t*, uint8_t*>(cpu->get_b_pointer(), cpu->get_b_pointer());
@@ -1188,13 +1190,13 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 			   [](std::array<uint8_t, 3> bytes) -> const std::string {
 				   return "LD [HL],L";
 			   }},
-	NoArgEntry{
-		&halt,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&halt,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "HALT";
+			   }},
 	OneU8Entry{&store_at_hl_address,
 			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 				   return cpu->get_a_pointer();
@@ -1783,13 +1785,13 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 			 [](std::array<uint8_t, 3> bytes) -> const std::string {
 				 return "RET Z";
 			 }},
-	NoArgEntry{
-		&return_from_subroutine,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&return_from_subroutine,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "RET";
+			   }},
 	ConU16Entry{&jump_to_immediate_conditionally,
 				[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 					return std::tuple<Condition, uint16_t*>(Condition::Z, reinterpret_cast<uint16_t*>(instr_ptr + 1));
@@ -1801,13 +1803,13 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					return string;
 				}},
-	NoArgEntry{
-		&nop,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&nop,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "CB INSTRUCTION";
+			   }},
 	ConU16Entry{&call_conditionally,
 				[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 					return std::tuple<Condition, uint16_t*>(Condition::Z, reinterpret_cast<uint16_t*>(instr_ptr + 1));
@@ -1871,13 +1873,13 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					return string;
 				}},
-	NoArgEntry{
-		&unsupported_op,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&unsupported_op,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "";
+			   }},
 	ConU16Entry{&call_conditionally,
 				[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 					return std::tuple<Condition, uint16_t*>(Condition::NC, reinterpret_cast<uint16_t*>(instr_ptr + 1));
@@ -1921,13 +1923,13 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 			 [](std::array<uint8_t, 3> bytes) -> const std::string {
 				 return "RET C";
 			 }},
-	NoArgEntry{
-		&return_from_interrupt_subroutine,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&return_from_interrupt_subroutine,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "RETI";
+			   }},
 	ConU16Entry{&jump_to_immediate_conditionally,
 				[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 					return std::tuple<Condition, uint16_t*>(Condition::C, reinterpret_cast<uint16_t*>(instr_ptr + 1));
@@ -1939,13 +1941,13 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					return string;
 				}},
-	NoArgEntry{
-		&unsupported_op,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&unsupported_op,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "";
+			   }},
 	ConU16Entry{&call_conditionally,
 				[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 					return std::tuple<Condition, uint16_t*>(Condition::C, reinterpret_cast<uint16_t*>(instr_ptr + 1));
@@ -1957,13 +1959,13 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					string += std::format("${:04x}", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					return string;
 				}},
-	NoArgEntry{
-		&unsupported_op,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&unsupported_op,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "";
+			   }},
 	OneU8Entry{&subtract_with_carry_immediate_from_a,
 			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 				   return instr_ptr + 1;
@@ -2007,20 +2009,20 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 			   [](std::array<uint8_t, 3> bytes) -> const std::string {
 				   return "LDH [C],A";
 			   }},
-	NoArgEntry{
-		&unsupported_op,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
-	NoArgEntry{
-		&unsupported_op,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&unsupported_op,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "";
+			   }},
+	NoArgEntry{&unsupported_op,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "";
+			   }},
 	OneU16Entry{&push_16bit_register_to_stack,
 				[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 					return cpu->get_hl_pointer();
@@ -2075,27 +2077,27 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					string += "A";
 					return string;
 				}},
-	NoArgEntry{
-		&unsupported_op,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
-	NoArgEntry{
-		&unsupported_op,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
-	NoArgEntry{
-		&unsupported_op,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&unsupported_op,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "";
+			   }},
+	NoArgEntry{&unsupported_op,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "";
+			   }},
+	NoArgEntry{&unsupported_op,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "";
+			   }},
 	OneU8Entry{&xor_a_with_immediate,
 			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 				   return instr_ptr + 1;
@@ -2139,20 +2141,20 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 			   [](std::array<uint8_t, 3> bytes) -> const std::string {
 				   return "LDH A,[C]";
 			   }},
-	NoArgEntry{
-		&disable_interrupts,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
-	NoArgEntry{
-		&unsupported_op,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&disable_interrupts,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "DI";
+			   }},
+	NoArgEntry{&unsupported_op,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "";
+			   }},
 	OneU16Entry{&push_16bit_register_to_stack,
 				[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 					return cpu->get_af_pointer();
@@ -2207,27 +2209,27 @@ constexpr std::array<JumpTableEntry, 256> jump_table = {
 					string += std::format("[${:04x}]", static_cast<uint16_t>((bytes[2] << 8) | bytes[1]));
 					return string;
 				}},
-	NoArgEntry{
-		&enable_interrupts,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
-	NoArgEntry{
-		&unsupported_op,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
-	NoArgEntry{
-		&unsupported_op,
-		[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
-			return std::monostate();
-		},
-
-	},
+	NoArgEntry{&enable_interrupts,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "EI";
+			   }},
+	NoArgEntry{&unsupported_op,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "";
+			   }},
+	NoArgEntry{&unsupported_op,
+			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
+				   return std::monostate();
+			   },
+			   [](std::array<uint8_t, 3> bytes) -> const std::string {
+				   return "";
+			   }},
 	OneU8Entry{&compare_a_with_immediate,
 			   [](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs {
 				   return instr_ptr + 1;

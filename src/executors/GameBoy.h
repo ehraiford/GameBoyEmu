@@ -20,10 +20,10 @@ class GameBoy {
 	Cpu cpu;
 	std::queue<GameBoyEvent> unprocessed_events;
 
-	void tick();
 	void process_new_events();
 
   public:
+	void tick_machine_cycle();
 	GameBoy()
 		: data_bus(&rom, &video_ram, &external_ram, &work_ram, &object_attribute_memory, &io_registers, &high_ram),
 		  rom(), video_ram(), external_ram(), work_ram(), object_attribute_memory(), io_registers(), high_ram(),

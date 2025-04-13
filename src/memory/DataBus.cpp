@@ -20,6 +20,10 @@ std::array<uint8_t, 3> DataBus::get_instruction(uint16_t address) {
 	instruction[2] = this->get_memory(address + 2);
 	return instruction;
 }
+uint8_t* DataBus::get_memory_ptr(uint16_t address) {
+	auto [device, offset] = this->determine_device_from_address(address);
+	return device->get_memory_ptr(address - offset);
+};
 
 std::tuple<Memory*, uint16_t> DataBus::determine_device_from_address(uint16_t address) {
 	switch (address) {

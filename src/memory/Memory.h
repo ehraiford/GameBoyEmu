@@ -5,7 +5,8 @@
 struct Memory {
 	virtual void set_memory(uint16_t address, uint8_t value) = 0;
 	virtual uint8_t get_memory(uint16_t address) = 0;
-	std::array<uint8_t, 3> get_instruction(uint16_t address);
+	virtual uint8_t* get_memory_ptr(uint16_t address) = 0;
+	virtual std::array<uint8_t, 3> get_instruction(uint16_t address) = 0;
 };
 
 class Rom : public Memory {
@@ -15,8 +16,9 @@ class Rom : public Memory {
 
   public:
 	uint8_t get_memory(uint16_t address) override;
-	std::array<uint8_t, 3> get_instruction(uint16_t address);
+	std::array<uint8_t, 3> get_instruction(uint16_t address) override;
 	void set_memory(uint16_t address, uint8_t value) override;
+	uint8_t* get_memory_ptr(uint16_t address) override;
 	void load_data(const std::vector<uint8_t>& data);
 };
 
@@ -26,8 +28,9 @@ class VideoRam : public Memory {
 
   public:
 	uint8_t get_memory(uint16_t address) override;
-	std::array<uint8_t, 3> get_instruction(uint16_t address);
+	std::array<uint8_t, 3> get_instruction(uint16_t address) override;
 	void set_memory(uint16_t address, uint8_t value) override;
+	uint8_t* get_memory_ptr(uint16_t address) override;
 };
 
 class ExternalRam : public Memory {
@@ -36,8 +39,9 @@ class ExternalRam : public Memory {
 
   public:
 	uint8_t get_memory(uint16_t address) override;
-	std::array<uint8_t, 3> get_instruction(uint16_t address);
+	std::array<uint8_t, 3> get_instruction(uint16_t address) override;
 	void set_memory(uint16_t address, uint8_t value) override;
+	uint8_t* get_memory_ptr(uint16_t address) override;
 };
 
 class WorkRam : public Memory {
@@ -47,8 +51,9 @@ class WorkRam : public Memory {
 
   public:
 	uint8_t get_memory(uint16_t address) override;
-	std::array<uint8_t, 3> get_instruction(uint16_t address);
+	std::array<uint8_t, 3> get_instruction(uint16_t address) override;
 	void set_memory(uint16_t address, uint8_t value) override;
+	uint8_t* get_memory_ptr(uint16_t address) override;
 };
 
 class ObjectAttributeMemory : public Memory {
@@ -57,8 +62,9 @@ class ObjectAttributeMemory : public Memory {
 
   public:
 	uint8_t get_memory(uint16_t address) override;
-	std::array<uint8_t, 3> get_instruction(uint16_t address);
+	std::array<uint8_t, 3> get_instruction(uint16_t address) override;
 	void set_memory(uint16_t address, uint8_t value) override;
+	uint8_t* get_memory_ptr(uint16_t address) override;
 };
 
 class IORegisters : public Memory {
@@ -67,8 +73,9 @@ class IORegisters : public Memory {
 
   public:
 	uint8_t get_memory(uint16_t address) override;
-	std::array<uint8_t, 3> get_instruction(uint16_t address);
+	std::array<uint8_t, 3> get_instruction(uint16_t address)override;
 	void set_memory(uint16_t address, uint8_t value) override;
+	uint8_t* get_memory_ptr(uint16_t address) override;
 };
 
 class HighRam : public Memory {
@@ -77,6 +84,7 @@ class HighRam : public Memory {
 
   public:
 	uint8_t get_memory(uint16_t address) override;
-	std::array<uint8_t, 3> get_instruction(uint16_t address);
+	std::array<uint8_t, 3> get_instruction(uint16_t address) override;
 	void set_memory(uint16_t address, uint8_t value) override;
+	uint8_t* get_memory_ptr(uint16_t address) override;
 };

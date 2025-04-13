@@ -32,7 +32,8 @@ Cpu::Cpu(DataBus* databus) {
 		entry = jump_table[instruction_bytes[0]];
 	}
 
-	this->current_operation = CurrentOperation{&entry, entry.op_code->get_cycles()};
+	this->current_operation =
+		CurrentOperation{&entry, entry.op_code->get_cycles(), entry.get_disassembly(instruction_bytes)};
 };
 
 void Cpu::fetch_next_instruction() {
@@ -64,8 +65,13 @@ void Cpu::tick_machine_cycle() {
 	case CpuState::RUNNING:
 		this->current_operation.remaining_cycles -= 1;
 		if (this->current_operation.remaining_cycles == 0) {
-			// this->current_operation.jump_table_entry->op_code->execute(this);
+			std::cout << "Executing: " << this->current_operation.disassembly << std::endl;
+			uint8_t* memory_pointer = this->databus->get_memory_ptr(this->pc);
+			auto args = this->current_operation.jump_table_entry->get_arguments(this, memory_pointer);
+			std::cout << ")))" << std::endl;
+			this->current_operation.jump_table_entry->op_code->execute(this, args);
 			this->fetch_next_instruction();
+			std::cout << ")))" << std::endl;
 		}
 	case CpuState::STOPPED:
 		std::cout << "Hit STOPPED State. Still needs to be implemented" << std::endl;

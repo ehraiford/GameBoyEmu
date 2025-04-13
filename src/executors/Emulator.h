@@ -10,4 +10,5 @@ class Emulator {
 	GameBoy get_gameboy();
 	void load_rom(const std::string& file_path);
 	Fetcher create_instruction_fetcher();
+	void tick();
 };

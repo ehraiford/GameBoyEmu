@@ -12,6 +12,9 @@ std::array<uint8_t, 3> IORegisters::get_instruction(uint16_t address) {
 	std::cerr << "Trying to read IORegisters as an instruction. This shouldn't happen." << std::endl;
 	return std::array<uint8_t, 3>({this->memory[address], this->memory[address + 1], this->memory[address + 2]});
 }
+uint8_t* IORegisters::get_memory_ptr(uint16_t address) {
+	return &this->memory[address];
+};
 
 void IORegisters::set_memory(uint16_t address, uint8_t value) {
 	switch (address) {
