@@ -25,7 +25,7 @@ def immediate_8_unsigned() -> Argument:
     return Argument(function, "uint8_t*", disassembly)
 
 def immediate_8_signed() -> Argument:
-    function = "instr_ptr + 1"
+    function = "reinterpret_cast<int8_t*>(instr_ptr + 1)"
     disassembly = f"std::format(\"${{:02x}}\", static_cast<int>(bytes[1]))"
     return Argument(function, "uint8_t*", disassembly)
 
@@ -125,7 +125,7 @@ def a() -> Argument:
     return Argument("N/A", "N/A", "\"A\"")
 # this one, we need immediate, not signed so it's kinda like the above but not quite
 def sp_plus_signed_immediate():
-    function = "instr_ptr + 1"
+    function = "reinterpret_cast<int8_t*>(instr_ptr + 1)"
     disassembly = f"std::format(\"SP + {{}}\", static_cast<int>(bytes[1]))"
     return Argument(function, "uint8_t*", disassembly)
 
@@ -136,18 +136,14 @@ class JumpTableEntry:
         self.op_name = op_name
         self.arguments = arguments
 
-    def get_arguments_lambda(self) -> str:
-        func = "[](Cpu* cpu, uint8_t* instr_ptr) -> FuncArgs "
+    def get_execute_lambda(self) -> str:
+        func = "[](Cpu* cpu, uint8_t* instr_ptr) -> void "
         arguments = remove_na_arguments(self.arguments)
-
-        if len(arguments) == 0:
-            func += "{ return std::monostate(); }"
-        elif len(arguments) == 1 and arguments[0].type == "uint8_t":
-            func += f"{{ return static_cast<uint8_t>({arguments[0].function});}}"
-        elif len(arguments) == 1:
-            func += f"{{ return {arguments[0].function}; }}"
-        else:
-            func += f"{{ return std::tuple<{arguments[0].type}, {arguments[1].type}>({arguments[0].function}, {arguments[1].function});}}"
+        func += f"{{ cpu->{self.instruction_name}("
+        for argument in arguments:
+            func += f"{argument.function},"
+        func = func.removesuffix(',')
+        func += ");}"
         return func
 
     def get_disassembly_lambda(self) -> str:
@@ -178,44 +174,14 @@ class JumpTableEntry:
                 func += f"\t\t\treturn string;\n"              
         func += "\t\t}"
         return func
-    def get_jump_table_class(self):
-        cpp_arguments = [argument for argument in self.arguments if argument.type != "N/A"]
-        
-        entry_class = "JumpTableEntry"
-        if len(cpp_arguments) == 0:
-           entry_class = "NoArgEntry"
-        elif len(cpp_arguments) == 1:
-            if cpp_arguments[0].type == "uint8_t*" or cpp_arguments[0].type == "uint8_t":
-                entry_class = "OneU8Entry"
-            elif cpp_arguments[0].type == "uint16_t*":
-                entry_class = "OneU16Entry"
-            elif cpp_arguments[0].type == "int8_t*":
-                entry_class = "OneI8Entry"
-            elif cpp_arguments[0].type == "Condition":
-                entry_class = "ConEntry"
-            else:
-                print(f"FuncType was unexpectedly: {cpp_arguments[0].type}")
-        else:
-            if (cpp_arguments[0].type == "uint8_t*" or cpp_arguments[0].type == "uint8_t") and cpp_arguments[1].type == "uint8_t*":
-                entry_class = "TwoU8Entry"
-            elif cpp_arguments[0].type == "uint16_t*" and cpp_arguments[1].type == "uint16_t*":
-                entry_class = "TwoU16Entry"
-            elif cpp_arguments[0].type == "Condition" and cpp_arguments[1].type == "int8_t*":
-                entry_class = "ConI8Entry"            
-            elif cpp_arguments[0].type == "Condition" and cpp_arguments[1].type == "uint8_t*":
-                entry_class = "ConU8Entry"
-            elif cpp_arguments[0].type == "Condition" and cpp_arguments[1].type == "uint16_t*":
-                entry_class = "ConU16Entry"
-            else:
-                print(f"FuncType was unexpectedly: {cpp_arguments[0].type} and {cpp_arguments[1].type}")
-        return entry_class
     def to_string(self) -> str:
-  
+
         return f"""
-        {self.get_jump_table_class()} {{
-        &{self.instruction_name},
-        {self.get_arguments_lambda()},
-        {self.get_disassembly_lambda()}
+    JumpTableEntry {{
+    {self.get_execute_lambda()},
+    {self.get_disassembly_lambda()},
+    {self.instruction_name}.cycles,
+    {self.instruction_name}.bytes,
     }},"""
 
 
@@ -443,12 +409,12 @@ def decode_cb_byte(byte: int):
 
 
 with open("jump_table_py_output.txt", "w") as file:
-    file.write("constexpr std::array<JumpTableEntry, 256> jump_table = {")
+    file.write("static std::array<JumpTableEntry, 256> jump_table = {")
     for i in range(0, 256):
         file.write(decode_byte(i).to_string())
     file.write("\n};")
 
-    file.write("constexpr std::array<JumpTableEntry, 256> jump_table_cb = {")
+    file.write("static std::array<JumpTableEntry, 256> jump_table_cb = {")
     for i in range(0,256):
         file.write(decode_cb_byte(i).to_string())
     file.write("\n};")

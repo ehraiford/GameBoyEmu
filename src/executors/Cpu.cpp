@@ -3,19 +3,25 @@
 #include <iostream>
 
 void Cpu::generate_current_op() {
-	auto bytes = databus->get_instruction(0);
+	auto bytes = databus->get_instruction(this->pc);
 	JumpTableEntry entry;
 	if (bytes[0] == 0xCB) {
 		entry = jump_table_cb[bytes[1]];
 	} else {
 		entry = jump_table[bytes[0]];
 	}
-	OpFunc func = entry.op_code->get_opfunc();
-	FuncArgs args = entry.get_arguments(this, this->databus->get_memory_ptr(this->pc));
-	uint8_t length = entry.op_code->get_length();
-	uint8_t cycles = entry.op_code->get_cycles();
+	auto op = entry.execute;
+	uint8_t length = entry.bytes;
+	uint8_t cycles = entry.cycles;
 	std::string disassembly = entry.get_disassembly(bytes);
-	this->generate_current_op();
+	this->current_operation = std::make_unique<CurrentOperation>(CurrentOperation{
+		op,
+		cycles,
+		cycles,
+		length,
+		bytes,
+		disassembly,
+	});
 };
 
 Cpu::Cpu(DataBus* databus) {
@@ -36,34 +42,26 @@ Cpu::Cpu(DataBus* databus) {
 
 void Cpu::point_pc_at_start_of_memory() {
 	this->pc = 0;
-	this->generate_current_op();
+	this->fetch_next_instruction();
 }
 
 void Cpu::fetch_next_instruction() {
-	this->pc += this->current_operation.length;
 	this->generate_current_op();
+	this->pc += this->current_operation.get()->length;
 }
 
 std::string Cpu::get_instruction_disassembly() {
-	return this->current_operation.disassembly;
+	return this->current_operation.get()->disassembly;
 };
 
 void Cpu::tick_machine_cycle() {
 	switch (this->state) {
 	case CpuState::RUNNING:
-		this->current_operation.remaining_cycles -= 1;
-		if (this->current_operation.remaining_cycles == 0) {
-			std::cout << "Executing: " << this->current_operation.disassembly << std::endl;
-			uint8_t* memory_pointer = this->databus->get_memory_ptr(this->pc);
-			std::visit(
-				[](const auto& function) {
-					if constexpr (std::is_invocable_v<decltype(function)>) {
-						function(this, this->current_operation.args);
-					} else {
-						std::cerr << "Error: function is not callable." << std::endl;
-					}
-				},
-				this->current_operation.func);
+		this->current_operation.get()->remaining_cycles -= 1;
+		if (this->current_operation.get()->remaining_cycles == 0) {
+			std::cout << "Executing: " << this->current_operation.get()->disassembly << std::endl;
+			uint8_t* memory_pointer = this->databus->get_memory_ptr(this->pc - this->current_operation.get()->length);
+			this->current_operation.get()->execute(this, memory_pointer);
 
 			this->fetch_next_instruction();
 		}
@@ -101,8 +99,7 @@ void Cpu::push_to_stack(uint16_t value) {
 uint16_t Cpu::pop_from_stack() {
 	uint16_t value = this->databus->get_memory(this->sp);
 	this->sp += 1;
-	value <<= 8;
-	value |= this->databus->get_memory(this->sp);
+	value |= (this->databus->get_memory(this->sp) << 8);
 	this->sp += 1;
 	return value;
 }
@@ -547,37 +544,37 @@ void Cpu::xor_a_with_immediate(uint8_t* src) {
 
 // Bitflag instructions
 // BIT u3,r8
-void Cpu::set_zflag_if_register_bit_not_set(uint8_t* bit_position, uint8_t* reg) {
-	this->set_flag(Flag::Z_FLAG, (*reg & (1 << *bit_position)));
+void Cpu::set_zflag_if_register_bit_not_set(uint8_t bit_position, uint8_t* reg) {
+	this->set_flag(Flag::Z_FLAG, (*reg & (1 << bit_position)));
 	this->set_flag(Flag::N_FLAG, false);
 	this->set_flag(Flag::H_FLAG, true);
 };
 // BIT u3,[HL]
-void Cpu::set_zflag_if_value_at_hl_address_bit_not_set(uint8_t* bit_position) {
+void Cpu::set_zflag_if_value_at_hl_address_bit_not_set(uint8_t bit_position) {
 	uint8_t value = this->databus->get_memory(this->get_hl());
 
-	this->set_flag(Flag::Z_FLAG, (value & (1 << *bit_position)));
+	this->set_flag(Flag::Z_FLAG, (value & (1 << bit_position)));
 	this->set_flag(Flag::N_FLAG, false);
 	this->set_flag(Flag::H_FLAG, true);
 };
 // RES u3,r8
-void Cpu::clear_register_bit(uint8_t* bit_position, uint8_t* reg) {
-	*reg &= ~(1 << *bit_position);
+void Cpu::clear_register_bit(uint8_t bit_position, uint8_t* reg) {
+	*reg &= ~(1 << bit_position);
 };
 // RES u3,[HL]
-void Cpu::clear_value_at_hl_address_bit(uint8_t* bit_position) {
+void Cpu::clear_value_at_hl_address_bit(uint8_t bit_position) {
 	uint8_t value = this->databus->get_memory(this->get_hl());
-	value &= ~(1 << *bit_position);
+	value &= ~(1 << bit_position);
 	this->databus->set_memory(this->get_hl(), value);
 };
 // SET u3,r8
-void Cpu::set_register_bit(uint8_t* bit_position, uint8_t* reg) {
-	*reg |= 1 << *bit_position;
+void Cpu::set_register_bit(uint8_t bit_position, uint8_t* reg) {
+	*reg |= 1 << bit_position;
 };
 // SET u3,[HL]
-void Cpu::set_value_at_hl_address_bit(uint8_t* bit_position) {
+void Cpu::set_value_at_hl_address_bit(uint8_t bit_position) {
 	uint8_t value = this->databus->get_memory(this->get_hl());
-	value |= 1 << *bit_position;
+	value |= 1 << bit_position;
 	this->databus->set_memory(this->get_hl(), value);
 };
 
@@ -873,8 +870,8 @@ void Cpu::call(uint16_t* call_address) {
 	this->pc = *call_address;
 };
 // CALL cc,n16
-void Cpu::call_conditionally(Condition* condition, uint16_t* call_address) {
-	if (this->condition_is_met(*condition)) {
+void Cpu::call_conditionally(Condition condition, uint16_t* call_address) {
+	if (this->condition_is_met(condition)) {
 		this->call(call_address);
 	}
 };
@@ -887,8 +884,8 @@ void Cpu::jump_to_immediate(uint16_t* jump_address) {
 	this->pc = *jump_address;
 };
 // JP cc,n16
-void Cpu::jump_to_immediate_conditionally(Condition* condition, uint16_t* jump_address) {
-	if (this->condition_is_met(*condition)) {
+void Cpu::jump_to_immediate_conditionally(Condition condition, uint16_t* jump_address) {
+	if (this->condition_is_met(condition)) {
 		this->jump_to_immediate(jump_address);
 	}
 };
@@ -897,8 +894,8 @@ void Cpu::jump_relative_to_immediate(int8_t* offset) {
 	this->pc += *offset;
 };
 // JR cc,n16
-void Cpu::jump_relative_to_immediate_conditionally(Condition* condition, int8_t* offset) {
-	if (this->condition_is_met(*condition)) {
+void Cpu::jump_relative_to_immediate_conditionally(Condition condition, int8_t* offset) {
+	if (this->condition_is_met(condition)) {
 		this->jump_relative_to_immediate(offset);
 	}
 };
@@ -907,8 +904,8 @@ void Cpu::return_from_subroutine() {
 	this->pc = this->pop_from_stack();
 };
 // RET cc
-void Cpu::return_from_subroutine_conditionally(Condition* condition) {
-	if (this->condition_is_met(*condition)) {
+void Cpu::return_from_subroutine_conditionally(Condition condition) {
+	if (this->condition_is_met(condition)) {
 		this->return_from_subroutine();
 	}
 };
@@ -918,8 +915,8 @@ void Cpu::return_from_interrupt_subroutine() {
 	this->return_from_subroutine();
 };
 // RST vec
-void Cpu::call_vec(uint8_t* vec) {
-	uint16_t address = *vec & 00011100;
+void Cpu::call_vec(uint8_t vec) {
+	uint16_t address = vec & 00011100;
 	uint16_t pc = this->pc;
 
 	this->push_to_stack(pc);

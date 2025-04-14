@@ -22,22 +22,12 @@ enum CpuState {
 	HALTED,
 };
 
-class JumpTableEntry;
-
-struct CurrentOperation {
-	OpFunc func;
-	FuncArgs args;
-	uint8_t total_cycles;
-	uint8_t remaining_cycles;
-	uint8_t length;
-	std::string disassembly;
-};
+struct CurrentOperation;
 
 // TODO Check runtime alignment...
 class Cpu {
-  private:
+	std::unique_ptr<CurrentOperation> current_operation;
 	CpuState state;
-	CurrentOperation current_operation;
 	alignas(uint16_t) uint8_t b;
 	uint8_t c;
 	alignas(uint16_t) uint8_t d;
@@ -151,12 +141,12 @@ class Cpu {
 	void xor_a_with_immediate(uint8_t* src); // XOR A,n8
 
 	// Bitflag instructions
-	void set_zflag_if_register_bit_not_set(uint8_t* bit_position, uint8_t* reg); // BIT u3,r8
-	void set_zflag_if_value_at_hl_address_bit_not_set(uint8_t* bit_position);	 // BIT u3,[HL]
-	void clear_register_bit(uint8_t* bit_position, uint8_t* reg);				 // RES u3,r8
-	void clear_value_at_hl_address_bit(uint8_t* bit_position);					 // RES u3,[HL]
-	void set_register_bit(uint8_t* bit_position, uint8_t* reg);					 // SET u3,r8
-	void set_value_at_hl_address_bit(uint8_t* bit_position);					 // SET u3,[HL]
+	void set_zflag_if_register_bit_not_set(uint8_t bit_position, uint8_t* reg); // BIT u3,r8
+	void set_zflag_if_value_at_hl_address_bit_not_set(uint8_t bit_position);	// BIT u3,[HL]
+	void clear_register_bit(uint8_t bit_position, uint8_t* reg);				// RES u3,r8
+	void clear_value_at_hl_address_bit(uint8_t bit_position);					// RES u3,[HL]
+	void set_register_bit(uint8_t bit_position, uint8_t* reg);					// SET u3,r8
+	void set_value_at_hl_address_bit(uint8_t bit_position);						// SET u3,[HL]
 
 	// Bit shift instructions
 	void rotate_register_left(uint8_t* reg);				// RL r8
@@ -181,17 +171,17 @@ class Cpu {
 	void swap_value_at_hl_address_nibbles();				// SWAP [HL]
 
 	// Jump and Subroutine instructions
-	void call(uint16_t* call_address);													 // CALL n16
-	void call_conditionally(Condition* condition, uint16_t* call_address);				 // CALL cc,n16
-	void jump_to_value_at_hl_address();													 // JP HL
-	void jump_to_immediate(uint16_t* jump_address);										 // JP n16
-	void jump_to_immediate_conditionally(Condition* condition, uint16_t* jump_address);	 // JP cc,n16
-	void jump_relative_to_immediate(int8_t* offset);									 // JR n16
-	void jump_relative_to_immediate_conditionally(Condition* condition, int8_t* offset); // JR cc,n16
-	void return_from_subroutine_conditionally(Condition* condition);					 // RET cc
-	void return_from_subroutine();														 // RET
-	void return_from_interrupt_subroutine();											 // RETI
-	void call_vec(uint8_t* vec);														 // RST vec
+	void call(uint16_t* call_address);													// CALL n16
+	void call_conditionally(Condition condition, uint16_t* call_address);				// CALL cc,n16
+	void jump_to_value_at_hl_address();													// JP HL
+	void jump_to_immediate(uint16_t* jump_address);										// JP n16
+	void jump_to_immediate_conditionally(Condition condition, uint16_t* jump_address);	// JP cc,n16
+	void jump_relative_to_immediate(int8_t* offset);									// JR n16
+	void jump_relative_to_immediate_conditionally(Condition condition, int8_t* offset); // JR cc,n16
+	void return_from_subroutine_conditionally(Condition condition);						// RET cc
+	void return_from_subroutine();														// RET
+	void return_from_interrupt_subroutine();											// RETI
+	void call_vec(uint8_t vec);															// RST vec
 
 	// Carry Flag Instructions
 	void invert_carry_flag(); // CCF

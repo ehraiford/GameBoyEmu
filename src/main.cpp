@@ -1,6 +1,5 @@
 #include "../gui/fast_emu_gui/fast_emu_gui.h"
 #include "executors/GameBoy.h"
-#include "instructions/FetchDecode.h"
 #include "instructions/Opcodes.h"
 #include <fstream>
 #include <iostream>
@@ -25,7 +24,7 @@ std::unique_ptr<GameBoy> get_gameboy_with_loaded_rom(const std::string& file_pat
 void emulator(const std::string& file_path) {
 	auto gameboy = get_gameboy_with_loaded_rom(file_path);
 
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < 1000; i++) {
 		gameboy->tick_machine_cycle();
 	}
 }
