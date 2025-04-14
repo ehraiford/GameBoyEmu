@@ -1,6 +1,7 @@
 #pragma once
 #include "../memory/DataBus.h"
 #include <iostream>
+#include <memory>
 
 enum Flag {
 	Z_FLAG = 128, // Zero
@@ -24,12 +25,12 @@ enum CpuState {
 class JumpTableEntry;
 
 struct CurrentOperation {
-	JumpTableEntry* jump_table_entry;
+	OpFunc func;
+	FuncArgs args;
+	uint8_t total_cycles;
 	uint8_t remaining_cycles;
+	uint8_t length;
 	std::string disassembly;
-
-	uint8_t get_length();
-	uint8_t get_total_cycles();
 };
 
 // TODO Check runtime alignment...
@@ -68,7 +69,9 @@ class Cpu {
 	Cpu(DataBus* databus);
 	~Cpu();
 
+	void generate_current_op();
 	void tick_machine_cycle();
+	void point_pc_at_start_of_memory();
 
 	std::string get_instruction_disassembly();
 

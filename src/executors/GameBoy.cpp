@@ -4,6 +4,7 @@
 
 void GameBoy::load_buffer_as_cartridge(std::vector<uint8_t> buffer) {
 	this->rom.load_data(buffer);
+	this->cpu.point_pc_at_start_of_memory();
 }
 DataBus* GameBoy::get_databus() {
 	return &this->data_bus;

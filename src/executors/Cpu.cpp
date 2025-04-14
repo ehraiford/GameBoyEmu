@@ -2,11 +2,20 @@
 #include "../instructions/Opcodes.h"
 #include <iostream>
 
-uint8_t CurrentOperation::get_total_cycles() {
-	return this->jump_table_entry->op_code->get_cycles();
-};
-uint8_t CurrentOperation::get_length() {
-	return this->jump_table_entry->op_code->get_length();
+void Cpu::generate_current_op() {
+	auto bytes = databus->get_instruction(0);
+	JumpTableEntry entry;
+	if (bytes[0] == 0xCB) {
+		entry = jump_table_cb[bytes[1]];
+	} else {
+		entry = jump_table[bytes[0]];
+	}
+	OpFunc func = entry.op_code->get_opfunc();
+	FuncArgs args = entry.get_arguments(this, this->databus->get_memory_ptr(this->pc));
+	uint8_t length = entry.op_code->get_length();
+	uint8_t cycles = entry.op_code->get_cycles();
+	std::string disassembly = entry.get_disassembly(bytes);
+	this->generate_current_op();
 };
 
 Cpu::Cpu(DataBus* databus) {
@@ -21,39 +30,18 @@ Cpu::Cpu(DataBus* databus) {
 	this->h = 0;
 	this->l = 0;
 	this->sp = 0;
-	this->pc = 0;
 	this->interrupts_enabled = false;
-
-	auto instruction_bytes = databus->get_instruction(0);
-	JumpTableEntry entry;
-	if (instruction_bytes[0] == 0xCB) {
-		entry = jump_table_cb[instruction_bytes[1]];
-	} else {
-		entry = jump_table[instruction_bytes[0]];
-	}
-
-	this->current_operation =
-		CurrentOperation{&entry, entry.op_code->get_cycles(), entry.get_disassembly(instruction_bytes)};
+	this->point_pc_at_start_of_memory();
 };
 
+void Cpu::point_pc_at_start_of_memory() {
+	this->pc = 0;
+	this->generate_current_op();
+}
+
 void Cpu::fetch_next_instruction() {
-	this->pc += this->current_operation.get_length();
-	auto instruction_bytes = this->databus->get_instruction(this->pc);
-	JumpTableEntry entry;
-	if (instruction_bytes[0] == 0xCB) {
-		entry = jump_table_cb[instruction_bytes[1]];
-	} else {
-		entry = jump_table[instruction_bytes[0]];
-	}
-
-	uint8_t cycles = entry.op_code->get_cycles();
-	std::string disassembly = entry.get_disassembly(instruction_bytes);
-
-	this->current_operation = CurrentOperation{
-		&entry,
-		cycles,
-		disassembly,
-	};
+	this->pc += this->current_operation.length;
+	this->generate_current_op();
 }
 
 std::string Cpu::get_instruction_disassembly() {
@@ -67,18 +55,28 @@ void Cpu::tick_machine_cycle() {
 		if (this->current_operation.remaining_cycles == 0) {
 			std::cout << "Executing: " << this->current_operation.disassembly << std::endl;
 			uint8_t* memory_pointer = this->databus->get_memory_ptr(this->pc);
-			auto args = this->current_operation.jump_table_entry->get_arguments(this, memory_pointer);
-			std::cout << ")))" << std::endl;
-			this->current_operation.jump_table_entry->op_code->execute(this, args);
+			std::visit(
+				[](const auto& function) {
+					if constexpr (std::is_invocable_v<decltype(function)>) {
+						function(this, this->current_operation.args);
+					} else {
+						std::cerr << "Error: function is not callable." << std::endl;
+					}
+				},
+				this->current_operation.func);
+
 			this->fetch_next_instruction();
-			std::cout << ")))" << std::endl;
 		}
+		break;
 	case CpuState::STOPPED:
 		std::cout << "Hit STOPPED State. Still needs to be implemented" << std::endl;
+		break;
 	case CpuState::HALTED:
 		std::cout << "Hit HALTED State. Still needs to be implemented" << std::endl;
+		break;
 	default:
 		std::cout << "While ticking CPU, we are in a state that we haven't implemented yet" << std::endl;
+		break;
 	};
 };
 

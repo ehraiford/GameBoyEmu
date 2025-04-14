@@ -58,7 +58,8 @@
         "any": "cpp",
         "condition_variable": "cpp",
         "map": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "__config": "cpp"
     },
     "cSpell.words": [
         "ctest",
