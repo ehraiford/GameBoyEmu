@@ -16,11 +16,22 @@ uint8_t* Rom::get_memory_ptr(uint16_t address) {
 	return &this->bank_0[address];
 };
 void Rom::set_memory(uint16_t address, uint8_t value) {
-	this->bank_0[address] = value;
+	if (address < 16385) {
+		this->bank_0[address] = value;
+	} else if (address < 32770) {
+		this->bank_1[address - 16385] = value;
+	} else {
+		// TODO Handle data that goes beyond the first 2 banks here
+	}
 };
 
 void Rom::load_data(const std::vector<uint8_t>& data) {
 	for (size_t i = 0; i < data.size(); ++i) {
+		if (i > 32770) {
+			printf("Cannot finish loading data because it extends beyond the scope of the first two banks and beyond "
+				   "that has not been modeled yet.\n");
+			return;
+		}
 		this->set_memory(i, data[i]);
 	}
 };

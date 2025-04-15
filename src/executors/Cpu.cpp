@@ -916,7 +916,7 @@ void Cpu::return_from_interrupt_subroutine() {
 };
 // RST vec
 void Cpu::call_vec(uint8_t vec) {
-	uint16_t address = vec & 00011100;
+	uint16_t address = vec << 3;
 	uint16_t pc = this->pc;
 
 	this->push_to_stack(pc);
