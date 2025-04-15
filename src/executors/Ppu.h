@@ -1,3 +1,4 @@
+#pragma once
 #include "../memory/DataBus.h"
 
 class Sprite {
@@ -8,9 +9,13 @@ class Sprite {
 };
 
 enum SpriteFlags { Priority = 128, YFlip = 64, XFlip = 32, DmgPalette = 16, Bank = 8, CGBPalette = 0 };
+
 class Ppu {
-	DataBus* data_bus;
+	VideoRam* v_ram;
+	ObjectAttributeMemory* oam;
 
   public:
 	void render_frame_buffer();
+	void temp_track_tiles();
+	Ppu(VideoRam*, ObjectAttributeMemory*);
 };
