@@ -205,6 +205,7 @@ void Cpu::load_from_hl_address(uint8_t* dest) {
 };
 // LD [r16],A
 void Cpu::store_a_at_register_address(uint16_t* address) {
+	printf("Storing %#04x at address: %#04x", this->a, *address);
 	this->databus->set_memory(*address, this->a);
 };
 // LD [n16],A

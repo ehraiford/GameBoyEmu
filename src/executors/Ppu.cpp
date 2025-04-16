@@ -22,7 +22,22 @@ void temp_render_tile(uint8_t* starting_byte) {
 		}
 		for (int bit_index = 7; bit_index >= 0; bit_index--) {
 			uint8_t value = isolate_bit(byte_0, bit_index) + (isolate_bit(byte_1, bit_index) * 2);
-			tile += value;
+			std::string pixel;
+			switch (value) {
+			case 0:
+				pixel = ' ';
+				break;
+			case 1:
+				pixel = "\033[38;5;82m█\033[0m";
+				break;
+			case 2:
+				pixel = "\033[38;5;40m█\033[0m ";
+				break;
+			case 3:
+				pixel = "\033[38;5;34m█\033[0m ";
+				break;
+			};
+			tile += pixel;
 		}
 		tile += '\n';
 	}

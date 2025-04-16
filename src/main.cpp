@@ -12,11 +12,13 @@ std::unique_ptr<GameBoy> get_gameboy_with_loaded_rom(const std::string& file_pat
 	std::ifstream file(file_path, std::ios::binary);
 	if (!file.is_open()) {
 		std::cout << "Failed to open binary file: " << file_path << std::endl;
+		// todo: better handle when binaries aren't found
 		return gameboy;
 	}
 
 	std::vector<uint8_t> buffer((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 	file.close();
+	gameboy->run_bootrom();
 	gameboy->load_buffer_as_cartridge(buffer);
 	return gameboy;
 };
