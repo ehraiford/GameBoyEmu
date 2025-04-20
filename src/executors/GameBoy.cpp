@@ -3,7 +3,7 @@
 #include "Cpu.h"
 
 void GameBoy::load_buffer_as_cartridge(std::vector<uint8_t> buffer) {
-	this->rom.load_data(buffer);
+	this->rom.load_data_as_cartridge(buffer);
 }
 DataBus* GameBoy::get_databus() {
 	return &this->data_bus;
@@ -32,7 +32,7 @@ void GameBoy::run_bootrom() {
 		0xc6, 0x01, 0x0b, 0x1e, 0xd8, 0x21, 0x4d, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x3e, 0x01, 0xe0, 0x50,
 	};
-	this->rom.load_data(std::vector<uint8_t>(bootrom.begin(), bootrom.end()));
+	this->rom.load_data_as_cartridge(std::vector<uint8_t>(bootrom.begin(), bootrom.end()));
 	this->cpu.point_pc_at_start_of_memory();
 
 	for (int i = 0; i < 0x198; i++) {

@@ -7,10 +7,10 @@ include_directories(${GTEST_INCLUDE_DIRS})
 
 file(GLOB SRC_FILES "../src/**/*.cpp" "../src/**/*.h")
 
-add_executable(tests_fetch_decode 
-    tests_fetch_decode.cpp
+add_executable(tests 
+    tests.cpp
     ${SRC_FILES}
 )
-target_link_libraries(tests_fetch_decode GTest::GTest GTest::Main pthread)
+target_link_libraries(tests GTest::GTest GTest::Main pthread)
 enable_testing()
-add_test(NAME FetchDecodeTests COMMAND tests_fetch_decode)
+add_test(NAME FetchDecodeTests COMMAND tests)
