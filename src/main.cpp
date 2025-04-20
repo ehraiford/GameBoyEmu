@@ -18,8 +18,8 @@ std::unique_ptr<GameBoy> get_gameboy_with_loaded_rom(const std::string& file_pat
 
 	std::vector<uint8_t> buffer((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 	file.close();
-	gameboy->run_bootrom();
 	gameboy->load_buffer_as_cartridge(buffer);
+	gameboy->run_bootrom();
 	return gameboy;
 };
 

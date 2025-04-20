@@ -59,7 +59,7 @@ void Cpu::tick_machine_cycle() {
 	case CpuState::RUNNING:
 		this->current_operation.get()->remaining_cycles -= 1;
 		if (this->current_operation.get()->remaining_cycles == 0) {
-			std::cout << "Executing: " << this->current_operation.get()->disassembly << std::endl;
+			// std::cout << "Executing: " << this->current_operation.get()->disassembly << std::endl;
 			uint8_t* memory_pointer = this->databus->get_memory_ptr(this->pc - this->current_operation.get()->length);
 			this->current_operation.get()->execute(this, memory_pointer);
 
