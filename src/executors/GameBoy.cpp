@@ -32,6 +32,9 @@ void GameBoy::queue_event(GameBoyEvent event) {
 	this->unprocessed_events.push(event);
 }
 
+/// @brief Runs the bootrom in a backwards way.
+/// We copy out the first 0x100 bytes of the ROM, load the bootrom, and then run it until the bootrom completes. After
+/// that, we copy the original data back into the ROM.
 void GameBoy::run_bootrom() {
 	uint8_t cartridge_data[0x100];
 	std::memcpy(cartridge_data, this->rom.get_memory_ptr(0x00), sizeof(cartridge_data));
