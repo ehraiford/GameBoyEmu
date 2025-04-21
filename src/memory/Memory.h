@@ -27,17 +27,20 @@ struct CartridgeHeader {
 	void print_cartridge_data();
 };
 
-class Rom : public Memory {
+class Cartridge : public Memory {
   private:
-	uint8_t bank_0[0x4000] = {};
-	uint8_t bank_1[0x4000] = {};
+	uint8_t* bank0_ptr;
+	uint8_t* bank1_ptr;
+	std::vector<std::array<uint8_t, 0x4000>> banks;
 
   public:
+	Cartridge();
 	uint8_t get_memory(uint16_t address) override;
 	std::array<uint8_t, 3> get_instruction(uint16_t address) override;
 	void set_memory(uint16_t address, uint8_t value) override;
+	void load_data(const std::vector<uint8_t>& data);
 	uint8_t* get_memory_ptr(uint16_t address) override;
-	void load_data_as_cartridge(const std::vector<uint8_t>& data);
+	void initialize_cartridge_from_data(const std::vector<uint8_t>& data);
 };
 
 class VideoRam : public Memory {

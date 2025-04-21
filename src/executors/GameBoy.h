@@ -10,7 +10,7 @@ enum GameBoyEvent {
 	Halt,
 };
 class GameBoy {
-	Rom rom;
+	Cartridge rom;
 	VideoRam video_ram;
 	ExternalRam external_ram;
 	WorkRam work_ram;

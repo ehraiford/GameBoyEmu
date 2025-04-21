@@ -1,7 +1,5 @@
-// TODO: All of these are currently stubbed out just to appease the linker.
-// TODO: They will be implemented more properly in due time.
-
 #include "Memory.h"
+#include <cstring>
 #include <iostream>
 
 void CartridgeHeader::print_cartridge_data() {
@@ -601,38 +599,68 @@ CartridgeHeader::CartridgeHeader(uint8_t* header_ptr) {
 	this->global_checksum = static_cast<uint16_t>(header_ptr[0]) | (static_cast<uint16_t>(header_ptr[1]) << 8);
 };
 
-uint8_t Rom::get_memory(uint16_t address) {
-	uint8_t value = this->bank_0[address];
-	return value;
+Cartridge::Cartridge() : banks(2, std::array<uint8_t, 0x4000>{}) {
+	bank0_ptr = banks[0].data();
+	bank1_ptr = banks[1].data();
+}
+
+uint8_t Cartridge::get_memory(uint16_t address) {
+	if (address < 0x4000) {
+		return this->bank0_ptr[address];
+	} else {
+		return this->bank1_ptr[address - 0x4000];
+	}
 };
-std::array<uint8_t, 3> Rom::get_instruction(uint16_t address) {
-	std::array<uint8_t, 3> bytes = {this->bank_0[address], this->bank_0[address + 1], this->bank_0[address + 2]};
+std::array<uint8_t, 3> Cartridge::get_instruction(uint16_t address) {
+	std::array<uint8_t, 3> bytes = {};
+	for (int i = 0; i < 3; i++) {
+		if (address + i < 0x4000) {
+			bytes[i] = this->bank0_ptr[address + i];
+		} else {
+			bytes[i] = this->bank1_ptr[address + i - 0x4000];
+		}
+	}
 	return bytes;
 }
-uint8_t* Rom::get_memory_ptr(uint16_t address) {
-	return &this->bank_0[address];
-};
-void Rom::set_memory(uint16_t address, uint8_t value) {
+uint8_t* Cartridge::get_memory_ptr(uint16_t address) {
 	if (address < 0x4000) {
-		this->bank_0[address] = value;
-	} else if (address < 0x8000) {
-		this->bank_1[address - 0x4000] = value;
+		return &this->bank0_ptr[address];
 	} else {
-		// TODO Handle data that goes beyond the first 2 banks here
+		return &this->bank1_ptr[address - 0x4000];
+	}
+};
+void Cartridge::set_memory(uint16_t address, uint8_t value) {
+	if (address < 0x4000) {
+		this->bank0_ptr[address] = value;
+	} else {
+		this->bank1_ptr[address - 0x4000] = value;
 	}
 };
 
-void Rom::load_data_as_cartridge(const std::vector<uint8_t>& data) {
-	CartridgeHeader header = CartridgeHeader((uint8_t*)data.data() + 0x104);
-	// header.print_cartridge_data();
-	for (int i = 0; i < data.size(); ++i) {
-		if (i > 32770) {
-			printf("Cannot finish loading data because it extends beyond the scope of the first two banks and beyond "
-				   "that has not been modeled yet.\n");
-			return;
+void Cartridge::load_data(const std::vector<uint8_t>& data) {
+	const uint8_t* chunk_ptr = &data[0];
+	int remaining_bytes = data.size();
+	uint8_t bank_number = 0;
+
+	while (remaining_bytes > 0) {
+		if (bank_number >= this->banks.size()) {
+			std::cerr << "The provided data is too large to fit in the ROM banks of the system." << std::endl;
+			break;
 		}
-		this->set_memory(i, data[i]);
+		int length = std::min(0x3000, remaining_bytes);
+		std::memcpy(this->banks[bank_number].data(), chunk_ptr, length);
+		remaining_bytes -= 0x4000;
+		bank_number += 1;
 	}
+}
+
+void Cartridge::initialize_cartridge_from_data(const std::vector<uint8_t>& data) {
+	CartridgeHeader header = CartridgeHeader((uint8_t*)data.data() + 0x104);
+	header.print_cartridge_data();
+	while (this->banks.size() < header.num_rom_banks) {
+		this->banks.emplace_back();
+	}
+	this->load_data(data);
 };
 
 uint8_t VideoRam::get_memory(uint16_t address) {

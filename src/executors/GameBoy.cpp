@@ -23,7 +23,7 @@ static constexpr std::array<uint8_t, 256> BOOTROM = {
 };
 
 void GameBoy::load_buffer_as_cartridge(std::vector<uint8_t> buffer) {
-	this->rom.load_data_as_cartridge(buffer);
+	this->rom.initialize_cartridge_from_data(buffer);
 }
 DataBus* GameBoy::get_databus() {
 	return &this->data_bus;
@@ -38,14 +38,14 @@ void GameBoy::queue_event(GameBoyEvent event) {
 void GameBoy::run_bootrom() {
 	uint8_t cartridge_data[0x100];
 	std::memcpy(cartridge_data, this->rom.get_memory_ptr(0x00), sizeof(cartridge_data));
-	this->rom.load_data_as_cartridge(std::vector<uint8_t>(BOOTROM.begin(), BOOTROM.end()));
+	this->rom.load_data(std::vector<uint8_t>(BOOTROM.begin(), BOOTROM.end()));
 	this->cpu.point_pc_at_start_of_memory();
 
 	for (int i = 0; i < 0x198; i++) {
 		this->tick_machine_cycle();
 	}
 
-	this->rom.load_data_as_cartridge(std::vector<uint8_t>(cartridge_data, cartridge_data + sizeof(cartridge_data)));
+	this->rom.load_data(std::vector<uint8_t>(cartridge_data, cartridge_data + sizeof(cartridge_data)));
 }
 
 void GameBoy::process_new_events() {
