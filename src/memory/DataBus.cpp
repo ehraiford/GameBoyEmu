@@ -30,7 +30,7 @@ std::tuple<Memory*, uint16_t> DataBus::determine_device_from_address(uint16_t ad
 	case 0x0000 ... 0x7FFF:
 		return std::make_tuple(this->rom, 0);
 	case 0x8000 ... 0x9FFF:
-		std::cout << "Accessing address: 0x" << std::hex << address << std::endl;
+		// std::cout << "Accessing address: 0x" << std::hex << address << std::endl;
 		return std::make_tuple(this->video_ram, 0x8000);
 	case 0xA000 ... 0xBFFF:
 		return std::make_tuple(this->external_ram, 0xA000);

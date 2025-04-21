@@ -1,6 +1,7 @@
 #include "../gui/fast_emu_gui/fast_emu_gui.h"
 #include "executors/GameBoy.h"
 #include "instructions/Opcodes.h"
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <queue>
@@ -25,10 +26,16 @@ std::unique_ptr<GameBoy> get_gameboy_with_loaded_rom(const std::string& file_pat
 
 void emulator(const std::string& file_path) {
 	auto gameboy = get_gameboy_with_loaded_rom(file_path);
+	auto start = std::chrono::high_resolution_clock::now();
 
-	for (int i = 0; i < 1000; i++) {
+	for (int i = 0; i < 1048576 * 4; i++) {
 		gameboy->tick_machine_cycle();
 	}
+	auto end = std::chrono::high_resolution_clock::now();
+
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+	std::cout << "Time taken: " << duration.count() << " milliseconds\n";
 }
 
 int main(int argc, char* argv[]) {

@@ -1,6 +1,6 @@
 #GameBoyEmu
 
-The plan is for this to eventually be a cycle accurate emulator of Nintendo's GameBoy.
+The plan is for this to eventually be an accurate emulator of Nintendo's GameBoy.
 
 The goal for this emulator was to help me get better at C++ as my emulation experience has primarily been in Rust. 
 

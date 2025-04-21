@@ -70,7 +70,7 @@ void GameBoy::process_new_events() {
 }
 
 void GameBoy::tick_machine_cycle() {
-	this->process_new_events();
+	// this->process_new_events();
 	this->cpu.tick_machine_cycle();
-	this->ppu.temp_track_tiles();
+	// this->ppu.temp_track_tiles();
 }
