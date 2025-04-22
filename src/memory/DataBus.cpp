@@ -49,6 +49,6 @@ std::tuple<Memory*, uint16_t> DataBus::determine_device_from_address(uint16_t ad
 		return std::make_tuple(this->io_registers, 0xFFFF);
 	}
 };
-Cartridge* DataBus::get_databus() {
+Rom* DataBus::get_databus() {
 	return this->rom;
 }

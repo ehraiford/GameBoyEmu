@@ -1,3 +1,4 @@
+#include "../memory/Cartridge.h"
 #include "../memory/DataBus.h"
 #include "../memory/Memory.h"
 #include "Cpu.h"
@@ -10,9 +11,8 @@ enum GameBoyEvent {
 	Halt,
 };
 class GameBoy {
-	Cartridge rom;
+	Cartridge cartridge;
 	VideoRam video_ram;
-	ExternalRam external_ram;
 	WorkRam work_ram;
 	ObjectAttributeMemory object_attribute_memory;
 	IORegisters io_registers;
@@ -26,9 +26,10 @@ class GameBoy {
 
   public:
 	GameBoy()
-		: data_bus(&rom, &video_ram, &external_ram, &work_ram, &object_attribute_memory, &io_registers, &high_ram),
-		  rom(), video_ram(), external_ram(), work_ram(), object_attribute_memory(), io_registers(), high_ram(),
-		  cpu(&data_bus), ppu(&video_ram, &object_attribute_memory) {};
+		: data_bus(cartridge.get_rom(), &video_ram, cartridge.get_external_ram(), &work_ram, &object_attribute_memory,
+				   &io_registers, &high_ram),
+		  cartridge(), video_ram(), work_ram(), object_attribute_memory(), io_registers(), high_ram(), cpu(&data_bus),
+		  ppu(&video_ram, &object_attribute_memory) {};
 
 	void tick_machine_cycle();
 	void run_bootrom();
