@@ -513,6 +513,8 @@ std::string decode_cartridge_type(uint8_t byte) {
 	}
 }
 
+CartridgeHeader::CartridgeHeader() {};
+
 /// @brief This should start at 0x104 of the ROM
 /// @param header_ptr
 CartridgeHeader::CartridgeHeader(uint8_t* header_ptr) {
@@ -654,28 +656,37 @@ void Rom::load_data(const std::vector<uint8_t>& data) {
 	}
 }
 
-void Rom::initialize_cartridge_from_data(const std::vector<uint8_t>& data) {
-	CartridgeHeader header = CartridgeHeader((uint8_t*)data.data() + 0x104);
-	header.print_cartridge_data();
-	while (this->banks.size() < header.num_rom_banks) {
-		this->banks.emplace_back();
-	}
+void Rom::initialize_from_cartridge_data(const std::vector<uint8_t>& data, uint8_t number_of_banks) {
+	this->banks.resize(number_of_banks, std::array<uint8_t, 0x4000>{});
+	this->bank0_ptr = this->banks[0].data();
+	this->bank1_ptr = this->banks[1].data();
 	this->load_data(data);
 };
 
+void ExternalRam::initialize_banks(uint8_t number_of_banks) {
+	this->banks.resize(number_of_banks, std::array<uint8_t, 0x2000>{});
+	this->bank_ptr = this->banks[0].data(); // Update bank_ptr to point to the first bank
+}
+
+ExternalRam::ExternalRam() : banks(1, std::array<uint8_t, 0x2000>{}) {
+	bank_ptr = banks[0].data();
+};
+
 uint8_t ExternalRam::get_memory(uint16_t address) {
-	return this->memory[address];
+	return this->bank_ptr[address];
 };
 std::array<uint8_t, 3> ExternalRam::get_instruction(uint16_t address) {
-	std::array<uint8_t, 3> bytes = {this->memory[address], this->memory[address + 1], this->memory[address + 2]};
+	std::array<uint8_t, 3> bytes = {this->bank_ptr[address], this->bank_ptr[address + 1], this->bank_ptr[address + 2]};
 	return bytes;
 }
 uint8_t* ExternalRam::get_memory_ptr(uint16_t address) {
-	return &this->memory[address];
+	return &this->bank_ptr[address];
 };
 void ExternalRam::set_memory(uint16_t address, uint8_t value) {
-	this->memory[address] = value;
+	this->bank_ptr[address] = value;
 };
+
+Cartridge::Cartridge() : rom(), ram(), header() {};
 
 ExternalRam* Cartridge::get_external_ram() {
 	return &this->ram;
@@ -683,3 +694,9 @@ ExternalRam* Cartridge::get_external_ram() {
 Rom* Cartridge::get_rom() {
 	return &this->rom;
 };
+
+void Cartridge::initialize_cartridge_from_data(std::vector<uint8_t> data) {
+	this->header = CartridgeHeader((uint8_t*)data.data() + 0x104);
+	this->rom.initialize_from_cartridge_data(data, this->header.num_rom_banks);
+	this->ram.initialize_banks(this->header.num_ram_banks);
+}

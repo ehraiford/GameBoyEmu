@@ -17,6 +17,7 @@ struct CartridgeHeader {
 	uint8_t header_checksum;
 	uint16_t global_checksum;
 
+	CartridgeHeader();
 	CartridgeHeader(uint8_t* header_ptr);
 	void print_cartridge_data();
 };
@@ -34,14 +35,17 @@ class Rom : public Memory {
 	void set_memory(uint16_t address, uint8_t value) override;
 	void load_data(const std::vector<uint8_t>& data);
 	uint8_t* get_memory_ptr(uint16_t address) override;
-	void initialize_cartridge_from_data(const std::vector<uint8_t>& data);
+	void initialize_from_cartridge_data(const std::vector<uint8_t>& data, uint8_t number_of_banks);
 };
 
 class ExternalRam : public Memory {
   private:
-	uint8_t memory[0x2000] = {};
+	uint8_t* bank_ptr;
+	std::vector<std::array<uint8_t, 0x2000>> banks;
 
   public:
+	ExternalRam();
+	void initialize_banks(uint8_t number_of_banks);
 	uint8_t get_memory(uint16_t address) override;
 	std::array<uint8_t, 3> get_instruction(uint16_t address) override;
 	void set_memory(uint16_t address, uint8_t value) override;
@@ -49,10 +53,13 @@ class ExternalRam : public Memory {
 };
 
 class Cartridge {
+	CartridgeHeader header;
 	ExternalRam ram;
 	Rom rom;
 
   public:
+	Cartridge();
+	void initialize_cartridge_from_data(std::vector<uint8_t> data);
 	ExternalRam* get_external_ram();
 	Rom* get_rom();
 };

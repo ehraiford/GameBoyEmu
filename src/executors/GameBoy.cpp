@@ -24,7 +24,7 @@ static constexpr std::array<uint8_t, 256> BOOTROM = {
 };
 
 void GameBoy::load_buffer_as_cartridge(std::vector<uint8_t> buffer) {
-	this->cartridge.get_rom()->initialize_cartridge_from_data(buffer);
+	this->cartridge.initialize_cartridge_from_data(buffer);
 }
 DataBus* GameBoy::get_databus() {
 	return &this->data_bus;
