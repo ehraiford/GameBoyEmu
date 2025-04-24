@@ -601,41 +601,38 @@ CartridgeHeader::CartridgeHeader(uint8_t* header_ptr) {
 	this->global_checksum = static_cast<uint16_t>(header_ptr[0]) | (static_cast<uint16_t>(header_ptr[1]) << 8);
 };
 
-Rom::Rom() : banks(2, std::array<uint8_t, 0x4000>{}) {
-	bank0_ptr = banks[0].data();
-	bank1_ptr = banks[1].data();
-}
+Rom::Rom() : banks(2, std::array<uint8_t, 0x4000>{}) {};
 
 uint8_t Rom::get_memory(uint16_t address) {
 	if (address < 0x4000) {
-		return this->bank0_ptr[address];
+		return this->banks[this->bank0_index][address];
 	} else {
-		return this->bank1_ptr[address - 0x4000];
+		return this->banks[this->bank1_index][address - 0x4000];
 	}
 };
 std::array<uint8_t, 3> Rom::get_instruction(uint16_t address) {
 	std::array<uint8_t, 3> bytes = {};
 	for (int i = 0; i < 3; i++) {
 		if (address + i < 0x4000) {
-			bytes[i] = this->bank0_ptr[address + i];
+			bytes[i] = this->banks[this->bank0_index][address + i];
 		} else {
-			bytes[i] = this->bank1_ptr[address + i - 0x4000];
+			bytes[i] = this->banks[this->bank1_index][address + i - 0x4000];
 		}
 	}
 	return bytes;
 }
 uint8_t* Rom::get_memory_ptr(uint16_t address) {
 	if (address < 0x4000) {
-		return &this->bank0_ptr[address];
+		return &this->banks[this->bank0_index][address];
 	} else {
-		return &this->bank1_ptr[address - 0x4000];
+		return &this->banks[this->bank1_index][address - 0x4000];
 	}
 };
 void Rom::set_memory(uint16_t address, uint8_t value) {
 	if (address < 0x4000) {
-		this->bank0_ptr[address] = value;
+		this->banks[this->bank0_index][address] = value;
 	} else {
-		this->bank1_ptr[address - 0x4000] = value;
+		this->banks[this->bank1_index][address - 0x4000] = value;
 	}
 };
 
@@ -658,32 +655,28 @@ void Rom::load_data(const std::vector<uint8_t>& data) {
 
 void Rom::initialize_from_cartridge_data(const std::vector<uint8_t>& data, uint8_t number_of_banks) {
 	this->banks.resize(number_of_banks, std::array<uint8_t, 0x4000>{});
-	this->bank0_ptr = this->banks[0].data();
-	this->bank1_ptr = this->banks[1].data();
 	this->load_data(data);
 };
 
 void ExternalRam::initialize_banks(uint8_t number_of_banks) {
 	this->banks.resize(number_of_banks, std::array<uint8_t, 0x2000>{});
-	this->bank_ptr = this->banks[0].data(); // Update bank_ptr to point to the first bank
 }
 
-ExternalRam::ExternalRam() : banks(1, std::array<uint8_t, 0x2000>{}) {
-	bank_ptr = banks[0].data();
-};
+ExternalRam::ExternalRam() : banks(1, std::array<uint8_t, 0x2000>{}) {};
 
 uint8_t ExternalRam::get_memory(uint16_t address) {
-	return this->bank_ptr[address];
+	return this->banks[this->bank_index][address];
 };
 std::array<uint8_t, 3> ExternalRam::get_instruction(uint16_t address) {
-	std::array<uint8_t, 3> bytes = {this->bank_ptr[address], this->bank_ptr[address + 1], this->bank_ptr[address + 2]};
+	std::array<uint8_t, 3> bytes = {this->banks[this->bank_index][address], this->banks[this->bank_index][address + 1],
+									this->banks[this->bank_index][address + 2]};
 	return bytes;
 }
 uint8_t* ExternalRam::get_memory_ptr(uint16_t address) {
-	return &this->bank_ptr[address];
+	return &this->banks[this->bank_index][address];
 };
 void ExternalRam::set_memory(uint16_t address, uint8_t value) {
-	this->bank_ptr[address] = value;
+	this->banks[this->bank_index][address] = value;
 };
 
 Cartridge::Cartridge() : rom(), ram(), header() {};

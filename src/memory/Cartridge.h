@@ -24,8 +24,8 @@ struct CartridgeHeader {
 
 class Rom : public Memory {
   private:
-	uint8_t* bank0_ptr;
-	uint8_t* bank1_ptr;
+	uint8_t bank0_index = 0;
+	uint8_t bank1_index = 1;
 	std::vector<std::array<uint8_t, 0x4000>> banks;
 
   public:
@@ -40,7 +40,7 @@ class Rom : public Memory {
 
 class ExternalRam : public Memory {
   private:
-	uint8_t* bank_ptr;
+	uint8_t bank_index = 0;
 	std::vector<std::array<uint8_t, 0x2000>> banks;
 
   public:
