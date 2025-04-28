@@ -35,5 +35,6 @@ class GameBoy {
 	void run_bootrom();
 	void load_buffer_as_cartridge(std::vector<uint8_t> data);
 	void queue_event(GameBoyEvent event);
+	void display_tiles();
 	DataBus* get_databus();
 };

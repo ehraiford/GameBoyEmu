@@ -1,6 +1,15 @@
 #pragma once
 #include "../memory/DataBus.h"
 
+class Tile {
+	std::array<uint8_t, 16> bytes;
+
+  public:
+	Tile();
+	Tile(uint8_t* ptr);
+	void display();
+};
+
 class Sprite {
 	alignas(uint32_t) uint8_t y_position;
 	uint8_t x_position;
@@ -16,6 +25,6 @@ class Ppu {
 
   public:
 	void render_frame_buffer();
-	void temp_track_tiles();
 	Ppu(VideoRam*, ObjectAttributeMemory*);
+	std::array<Tile, 384> get_tiles();
 };

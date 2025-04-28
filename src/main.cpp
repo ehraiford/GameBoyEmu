@@ -25,7 +25,7 @@ std::unique_ptr<GameBoy> get_gameboy_with_loaded_rom(const std::string& file_pat
 };
 
 void emulator(const std::string& file_path) {
-	auto gameboy = get_gameboy_with_loaded_rom(file_path);
+	std::unique_ptr<GameBoy> gameboy = get_gameboy_with_loaded_rom(file_path);
 	auto start = std::chrono::high_resolution_clock::now();
 
 	for (int i = 0; i < 1048576 * 4; i++) {
@@ -36,6 +36,8 @@ void emulator(const std::string& file_path) {
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
 	std::cout << "Time taken: " << duration.count() << " milliseconds\n";
+
+	gameboy.get()->display_tiles();
 }
 
 int main(int argc, char* argv[]) {

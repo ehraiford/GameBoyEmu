@@ -1,14 +1,31 @@
 #include "Ppu.h"
 
+uint8_t isolate_bit(uint8_t byte, uint8_t bit_index) {
+	return ((byte >> bit_index) & 1);
+};
+
+Tile::Tile() {
+}
+Tile::Tile(uint8_t* ptr) {
+	this->bytes = std::array<uint8_t, 16>();
+	for (int i = 0; i < 16; i++) {
+		this->bytes[i] = *ptr;
+		ptr += 1;
+	}
+}
+
+void Tile::display() {
+	for (int i = 0; i < 16; i++) {
+		std::cout << static_cast<int>(this->bytes[i]) << ", ";
+	}
+	std::cout << std::endl;
+}
+
 Ppu::Ppu(VideoRam* v_ram, ObjectAttributeMemory* oam) : v_ram(v_ram), oam(oam) {
 }
 
 void Ppu::render_frame_buffer() {
 
-};
-
-uint8_t isolate_bit(uint8_t byte, uint8_t bit_index) {
-	return ((byte >> bit_index) & 1);
 };
 
 void temp_render_tile(uint8_t* starting_byte) {
@@ -46,8 +63,12 @@ void temp_render_tile(uint8_t* starting_byte) {
 	}
 };
 
-void Ppu::temp_track_tiles() {
-	for (int i = 0; i < 0x17ff; i += 16) {
-		temp_render_tile(this->v_ram->get_memory_ptr(i));
+std::array<Tile, 384> Ppu::get_tiles() {
+	uint8_t* ptr = this->v_ram->get_memory_ptr(0);
+	std::array<Tile, 384> tiles = std::array<Tile, 384>();
+	for (int i = 0; i < 384; i++) {
+		tiles[i] = Tile(ptr);
+		ptr += 16;
 	}
+	return tiles;
 };

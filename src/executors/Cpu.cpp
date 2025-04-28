@@ -923,7 +923,6 @@ void Cpu::return_from_interrupt_subroutine() {
 void Cpu::call_vec(uint8_t vec) {
 	uint16_t address = vec << 3;
 	uint16_t pc = this->pc;
-	printf("PC Was 0x%x. It is now 0x%x\n", address, pc);
 	this->push_to_stack(pc);
 	this->pc = address;
 };

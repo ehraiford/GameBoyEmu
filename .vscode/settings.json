@@ -82,5 +82,8 @@
     },
     "[cpp]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"
-    }
+    },
+    "workbench.editor.enablePreview": true,
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 1000
 }

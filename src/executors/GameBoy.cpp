@@ -70,8 +70,14 @@ void GameBoy::process_new_events() {
 	}
 }
 
+void GameBoy::display_tiles() {
+	std::array<Tile, 384> tiles = this->ppu.get_tiles();
+	for (int i = 0; i < 384; i++) {
+		tiles[i].display();
+	}
+}
+
 void GameBoy::tick_machine_cycle() {
 	// this->process_new_events();
 	this->cpu.tick_machine_cycle();
-	// this->ppu.temp_track_tiles();
 }
