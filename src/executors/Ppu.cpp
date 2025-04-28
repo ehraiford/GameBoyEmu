@@ -15,28 +15,10 @@ Tile::Tile(uint8_t* ptr) {
 }
 
 void Tile::display() {
-	for (int i = 0; i < 16; i++) {
-		std::cout << static_cast<int>(this->bytes[i]) << ", ";
-	}
-	std::cout << std::endl;
-}
-
-Ppu::Ppu(VideoRam* v_ram, ObjectAttributeMemory* oam) : v_ram(v_ram), oam(oam) {
-}
-
-void Ppu::render_frame_buffer() {
-
-};
-
-void temp_render_tile(uint8_t* starting_byte) {
-	bool is_empty = true;
 	std::string tile = "";
 	for (int i = 0; i < 16; i += 2) {
-		uint8_t byte_0 = *(starting_byte + i);
-		uint8_t byte_1 = *(starting_byte + i + 1);
-		if (byte_0 != 0 || byte_1 != 0) {
-			is_empty = false;
-		}
+		uint8_t byte_0 = this->bytes[i];
+		uint8_t byte_1 = this->bytes[i + 1];
 		for (int bit_index = 7; bit_index >= 0; bit_index--) {
 			uint8_t value = isolate_bit(byte_0, bit_index) + (isolate_bit(byte_1, bit_index) * 2);
 			std::string pixel;
@@ -58,9 +40,14 @@ void temp_render_tile(uint8_t* starting_byte) {
 		}
 		tile += '\n';
 	}
-	if (!is_empty) {
-		std::cout << tile << std::endl;
-	}
+	std::cout << tile << std::endl;
+}
+
+Ppu::Ppu(VideoRam* v_ram, ObjectAttributeMemory* oam) : v_ram(v_ram), oam(oam) {
+}
+
+void Ppu::render_frame_buffer() {
+
 };
 
 std::array<Tile, 384> Ppu::get_tiles() {
