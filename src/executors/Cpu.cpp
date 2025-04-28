@@ -2,6 +2,10 @@
 #include "../instructions/Opcodes.h"
 #include <iostream>
 
+uint16_t Cpu::get_pc() {
+	return this->pc;
+}
+
 void Cpu::generate_current_op() {
 	auto bytes = databus->get_instruction(this->pc);
 	JumpTableEntry entry;
@@ -205,7 +209,7 @@ void Cpu::load_from_hl_address(uint8_t* dest) {
 };
 // LD [r16],A
 void Cpu::store_a_at_register_address(uint16_t* address) {
-	printf("Storing %#04x at address: %#04x", this->a, *address);
+	// printf("Storing %#04x at address: %#04x", this->a, *address);
 	this->databus->set_memory(*address, this->a);
 };
 // LD [n16],A
@@ -919,7 +923,7 @@ void Cpu::return_from_interrupt_subroutine() {
 void Cpu::call_vec(uint8_t vec) {
 	uint16_t address = vec << 3;
 	uint16_t pc = this->pc;
-
+	printf("PC Was 0x%x. It is now 0x%x\n", address, pc);
 	this->push_to_stack(pc);
 	this->pc = address;
 };

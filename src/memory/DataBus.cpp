@@ -47,6 +47,8 @@ std::tuple<Memory*, uint16_t> DataBus::determine_device_from_address(uint16_t ad
 		return std::make_tuple(this->high_ram, 0xFF80);
 	case 0xFFFF:
 		return std::make_tuple(this->io_registers, 0xFFFF);
+	default:
+		std::cerr << "Unreachable: We somehow received a 16-bit value greater than 0xFFFF?: " << address << std::endl;
 	}
 };
 Rom* DataBus::get_databus() {

@@ -59,6 +59,7 @@ class Cpu {
 	Cpu(DataBus* databus);
 	~Cpu();
 
+	uint16_t get_pc();
 	void generate_current_op();
 	void tick_machine_cycle();
 	void point_pc_at_start_of_memory();
