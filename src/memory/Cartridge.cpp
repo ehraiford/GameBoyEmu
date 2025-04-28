@@ -646,7 +646,7 @@ void Rom::load_data(const std::vector<uint8_t>& data) {
 			std::cerr << "The provided data is too large to fit in the ROM banks of the system." << std::endl;
 			break;
 		}
-		int length = std::min(0x3000, remaining_bytes);
+		int length = std::min(0x4000, remaining_bytes);
 		std::memcpy(this->banks[bank_number].data(), chunk_ptr, length);
 		remaining_bytes -= 0x4000;
 		bank_number += 1;
