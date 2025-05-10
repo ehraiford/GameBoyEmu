@@ -30,10 +30,10 @@ void Tile::display() {
 				pixel = "\033[38;5;82m█\033[0m";
 				break;
 			case 2:
-				pixel = "\033[38;5;40m█\033[0m ";
+				pixel = "\033[38;5;40m█\033[0m";
 				break;
 			case 3:
-				pixel = "\033[38;5;34m█\033[0m ";
+				pixel = "\033[38;5;34m█\033[0m";
 				break;
 			};
 			tile += pixel;
